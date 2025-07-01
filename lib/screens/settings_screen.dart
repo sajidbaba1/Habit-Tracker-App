@@ -27,7 +27,7 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('Navigate to Other Apps'),
             onTap: () {
               HapticFeedback.vibrate();
-              // Add navigation logic to other apps (e.g., URL launch or app switch)
+              // Placeholder for navigation to other apps
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Navigate to other apps (placeholder)')));
             },
           ),

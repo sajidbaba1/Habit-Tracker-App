@@ -91,8 +91,8 @@ class HomeScreen extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.code),
-              title: const Text('Habit Tracker'), // Updated for clarity
+              leading: const Icon(Icons.checklist),
+              title: const Text('Habit Tracker'),
               onTap: () {
                 HapticFeedback.vibrate();
                 navigationService.navigateTo(const CodeTrackerScreen());
@@ -121,7 +121,7 @@ class HomeScreen extends StatelessWidget {
             ),
             Expanded(
               child: FutureBuilder<void>(
-                future: habitProvider.loadHabits(), // Lazy load habits
+                future: habitProvider.loadHabits(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());

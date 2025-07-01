@@ -15,7 +15,7 @@ class ChatbotScreen extends StatefulWidget {
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<Map<String, String>> _messages = [];
-  String _apiKey = 'YOUR_GEMINI_API_KEY'; // Replace with your API key from Google AI Studio
+  String _apiKey = 'AIzaSyAa-BRgGPZMsWaGj1-9j2VicsWjsTOXdoQ'; // Replace with secure method in production
 
   @override
   void initState() {
@@ -40,20 +40,17 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Future<String> _getGeminiResponse(String prompt) async {
-    final url = Uri.parse('https://api.google.com/gemini/v1/chat'); // Hypothetical endpoint
+    final url = Uri.parse('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=$_apiKey'); // Updated model name
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $_apiKey',
-      },
-      body: jsonEncode({'prompt': prompt}),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'contents': [{'parts': [{'text': prompt}]}]}),
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['response'] ?? 'No response from Gemini.';
+      return data['candidates'][0]['content']['parts'][0]['text'] ?? 'No response from Gemini.';
     } else {
-      return 'Error: ${response.statusCode}';
+      return 'Error: ${response.statusCode} - ${response.body}';
     }
   }
 

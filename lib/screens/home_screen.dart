@@ -6,10 +6,10 @@ import 'package:intl/intl.dart';
 import 'package:habit_tracker_app/screens/add_habit_screen.dart';
 import 'package:habit_tracker_app/screens/settings_screen.dart';
 import 'package:habit_tracker_app/screens/daily_motivation_screen.dart';
-import 'package:habit_tracker_app/screens/daily_quotes_screen.dart';
 import 'package:habit_tracker_app/screens/chatbot_screen.dart';
 import 'package:habit_tracker_app/screens/analytics_screen.dart';
 import 'package:habit_tracker_app/screens/habit_tracker_screen.dart';
+import 'package:habit_tracker_app/screens/sjd_coins_screen.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
 import 'package:habit_tracker_app/widgets/habit_card.dart';
 import 'package:habit_tracker_app/services/navigation_service.dart';
@@ -61,22 +61,31 @@ class _HomeScreenState extends State<HomeScreen> {
           totalRepeatCount: 1,
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Row(
-              children: [
-                const Icon(Icons.monetization_on, color: Colors.yellow, size: 24),
-                const SizedBox(width: 4),
-                Consumer<HabitProvider>(
-                  builder: (context, provider, child) => Text(
-                    'SJD: ${_calculateSJDCoin(provider)}',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.vibrate();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SJDCoinsScreen()),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.monetization_on, color: Colors.yellow, size: 24),
+                  const SizedBox(width: 4),
+                  Consumer<HabitProvider>(
+                    builder: (context, provider, child) => Text(
+                      'SJD: ${_calculateSJDCoin(provider)}',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           IconButton(
@@ -120,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Daily Quotes'),
               onTap: () {
                 HapticFeedback.vibrate();
-                setState(() => _selectedIndex = 3); // Use Motivation screen for now, can separate later
+                setState(() => _selectedIndex = 3); // Use Motivation screen for now
               },
             ),
             ListTile(

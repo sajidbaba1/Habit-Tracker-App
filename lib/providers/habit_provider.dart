@@ -1,164 +1,153 @@
 import 'package:flutter/material.dart';
-import 'package:habit_tracker_app/database_helper.dart';
-import 'dart:convert';
 import 'package:rxdart/rxdart.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import 'dart:convert';
+import 'package:habit_tracker_app/services/database_helper.dart';
 
 class HabitProvider with ChangeNotifier {
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   List<Map<String, dynamic>> _habits = [];
-  bool _isDarkMode = true;
-  final BehaviorSubject<bool> _loading = BehaviorSubject.seeded(false);
+  final _loadingController = BehaviorSubject<bool>.seeded(false);
+  bool _isDarkMode = false;
+
+  List<Map<String, dynamic>> get habits => _habits;
+  Stream<bool> get loading => _loadingController.stream;
+  bool get isDarkMode => _isDarkMode;
 
   HabitProvider() {
     loadHabits();
+    _loadTheme();
   }
-
-  List<Map<String, dynamic>> get habits => List.unmodifiable(_habits);
-  bool get isDarkMode => _isDarkMode;
-  Stream<bool> get loading => _loading.stream;
 
   Future<void> loadHabits() async {
-    _loading.add(true);
-    try {
-      _habits = await _dbHelper.getHabits();
-      for (var habit in _habits) {
-        final completionLog = (jsonDecode(habit['completion_log'] as String? ?? '[]') as List)
-            .map((d) => DateTime.parse(d as String))
-            .toList();
-        final streak = calculateLongestConsecutiveStreak(completionLog, DateTime.now());
-        if (streak != (habit['streak'] as int)) {
-          await editHabit(habit['id'], {'streak': streak});
-        }
-      }
-    } catch (e) {
-      _habits = [];
-    } finally {
-      _loading.add(false);
-      notifyListeners();
-    }
+    _loadingController.add(true);
+    final db = await DatabaseHelper.instance.database;
+    final habitList = await db.query('habits');
+    _habits = habitList.map((h) {
+      final log = jsonDecode(h['completion_log'] as String? ?? '[]') as List;
+      final streak = _calculateStreak(log.map((d) => DateTime.parse(d as String)).toList());
+      return {...h, 'streak': streak};
+    }).toList();
+    _loadingController.add(false);
+    notifyListeners();
   }
 
-  Future<void> addHabit(Map<String, dynamic> habit) async {
-    _loading.add(true);
-    try {
-      final habitWithDefaults = {
-        ...habit,
-        'streak': habit['streak'] ?? 0,
-        'completion_log': habit['completion_log'] ?? '[]',
-        'checklistEnabled': habit['checklistEnabled'] ?? false,
-      };
-      final id = await _dbHelper.insertHabit(habitWithDefaults);
-      habitWithDefaults['id'] = id;
-      _habits.add(habitWithDefaults);
-      notifyListeners();
-    } catch (e) {
-      rethrow;
-    } finally {
-      _loading.add(false);
-    }
+  Future<void> addHabit({
+    required String title,
+    required String category,
+    required int icon,
+    required int color,
+    bool checklistEnabled = false,
+  }) async {
+    final db = await DatabaseHelper.instance.database;
+    await db.insert('habits', {
+      'title': title,
+      'category': category,
+      'icon': icon,
+      'color': color,
+      'completion_log': jsonEncode([]),
+      'checklistEnabled': checklistEnabled ? 1 : 0,
+      'notes': '',
+    });
+    await loadHabits();
   }
 
-  Future<void> editHabit(int id, Map<String, dynamic> updates) async {
-    _loading.add(true);
-    try {
-      await _dbHelper.updateHabit(id, updates);
-      final index = _habits.indexWhere((h) => h['id'] == id);
-      if (index != -1) {
-        _habits[index] = {..._habits[index], ...updates};
-      }
-      notifyListeners();
-    } catch (e) {
-      rethrow;
-    } finally {
-      _loading.add(false);
-    }
+  Future<void> updateHabit(int id, {
+    String? title,
+    String? category,
+    int? icon,
+    int? color,
+    bool? checklistEnabled,
+  }) async {
+    final db = await DatabaseHelper.instance.database;
+    final currentHabit = _habits.firstWhere((h) => h['id'] == id);
+    await db.update(
+      'habits',
+      {
+        'title': title ?? currentHabit['title'],
+        'category': category ?? currentHabit['category'],
+        'icon': icon ?? currentHabit['icon'],
+        'color': color ?? currentHabit['color'],
+        'completion_log': currentHabit['completion_log'],
+        'checklistEnabled': checklistEnabled != null ? (checklistEnabled ? 1 : 0) : currentHabit['checklistEnabled'],
+        'notes': currentHabit['notes'] ?? '',
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    await loadHabits();
   }
 
-  Future<void> deleteHabit(int id) async {
-    _loading.add(true);
-    try {
-      await _dbHelper.deleteHabit(id);
-      _habits.removeWhere((h) => h['id'] == id);
-      notifyListeners();
-    } catch (e) {
-      rethrow;
-    } finally {
-      _loading.add(false);
-    }
+  Future<void> updateHabitNotes(int id, String notes) async {
+    final db = await DatabaseHelper.instance.database;
+    await db.update(
+      'habits',
+      {'notes': notes},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    await loadHabits();
   }
 
   Future<int> toggleCompletion(int index, DateTime date) async {
-    if (index >= 0 && index < _habits.length) {
-      final habit = _habits[index];
-      List<DateTime> completionLog = (jsonDecode(habit['completion_log'] as String? ?? '[]') as List)
-          .map((d) => DateTime.parse(d as String))
-          .toList();
-      final today = DateTime(date.year, date.month, date.day);
-      int oldStreak = calculateLongestConsecutiveStreak(completionLog, today);
-      if (completionLog.any((d) => d.year == today.year && d.month == today.month && d.day == today.day)) {
-        completionLog.removeWhere((d) => d.year == today.year && d.month == today.month && d.day == today.day);
-      } else {
-        completionLog.add(today);
-      }
-      completionLog.sort((a, b) => a.compareTo(b));
-
-      final newStreak = calculateLongestConsecutiveStreak(completionLog, today);
-      await editHabit(habit['id'], {
-        'completion_log': jsonEncode(completionLog.map((d) => d.toIso8601String()).toList()),
-        'streak': newStreak,
-      });
-      return newStreak > oldStreak ? newStreak : 0; // Return new streak if increased, else 0
+    final db = await DatabaseHelper.instance.database;
+    final habit = _habits[index];
+    List<DateTime> completionLog = (jsonDecode(habit['completion_log'] as String? ?? '[]') as List)
+        .map((d) => DateTime.parse(d as String))
+        .toList();
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    if (completionLog.any((d) => d.year == dateOnly.year && d.month == dateOnly.month && d.day == dateOnly.day)) {
+      completionLog.removeWhere((d) => d.year == dateOnly.year && d.month == dateOnly.month && d.day == dateOnly.day);
+    } else {
+      completionLog.add(dateOnly);
     }
-    return 0;
+    await db.update(
+      'habits',
+      {'completion_log': jsonEncode(completionLog.map((d) => d.toIso8601String()).toList())},
+      where: 'id = ?',
+      whereArgs: [habit['id']],
+    );
+    await loadHabits();
+    return _calculateStreak(completionLog);
   }
 
-  int calculateLongestConsecutiveStreak(List<DateTime> completionLog, DateTime referenceDate) {
+  Future<void> deleteHabit(int id) async {
+    final db = await DatabaseHelper.instance.database;
+    await db.delete('habits', where: 'id = ?', whereArgs: [id]);
+    await loadHabits();
+  }
+
+  int _calculateStreak(List<DateTime> completionLog) {
     if (completionLog.isEmpty) return 0;
-
-    // Sort dates in ascending order
-    completionLog.sort((a, b) => a.compareTo(b));
-
-    int maxStreak = 0;
-    int currentStreak = 0;
-    DateTime? lastDate;
-
+    completionLog.sort((a, b) => b.compareTo(a)); // Sort descending
+    int streak = 0;
+    DateTime current = DateTime.now();
     for (var date in completionLog) {
-      final dateStart = DateTime(date.year, date.month, date.day);
-      // Only consider dates up to and including the reference date
-      if (dateStart.isAfter(referenceDate)) continue;
-
-      if (lastDate == null) {
-        currentStreak = 1;
-        lastDate = dateStart;
-      } else {
-        final daysDiff = lastDate.difference(dateStart).inDays;
-        if (daysDiff == -1) { // Consecutive day (e.g., July 1 to June 30)
-          currentStreak++;
-          lastDate = dateStart;
-        } else if (daysDiff < -1) { // Gap detected
-          maxStreak = maxStreak > currentStreak ? maxStreak : currentStreak;
-          currentStreak = 1;
-          lastDate = dateStart;
-        }
+      final dateOnly = DateTime(date.year, date.month, date.day);
+      final currentOnly = DateTime(current.year, current.month, current.day);
+      if (dateOnly.isAtSameMomentAs(currentOnly) || dateOnly.isAtSameMomentAs(currentOnly.subtract(const Duration(days: 1)))) {
+        streak++;
+        current = date;
+      } else if (dateOnly.isBefore(currentOnly.subtract(const Duration(days: 1)))) {
+        break;
       }
     }
-
-    // Update maxStreak with the last streak if it's the longest, and ensure it includes the reference date
-    if (lastDate != null && !lastDate.isAfter(referenceDate)) {
-      maxStreak = maxStreak > currentStreak ? maxStreak : currentStreak;
-    }
-
-    return maxStreak;
+    return streak;
   }
 
-  void toggleTheme(bool value) {
-    _isDarkMode = value;
+  void toggleTheme(bool isDarkMode) {
+    _isDarkMode = isDarkMode;
+    notifyListeners();
+  }
+
+  void _loadTheme() {
+    _isDarkMode = false; // Default to light mode, can be persisted if needed
     notifyListeners();
   }
 
   @override
   void dispose() {
-    _loading.close();
+    _loadingController.close();
     super.dispose();
   }
 }

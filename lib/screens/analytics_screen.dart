@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Added for HapticFeedback
+import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
@@ -18,6 +18,7 @@ class _AnalyticsScreenContentState extends State<AnalyticsScreenContent> {
   String _selectedCategory = 'All';
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  final Map<DateTime, String> _dateLabels = {};
 
   @override
   Widget build(BuildContext context) {
@@ -93,6 +94,7 @@ class _AnalyticsScreenContentState extends State<AnalyticsScreenContent> {
                   _selectedDay = selectedDay;
                   _focusedDay = focusedDay;
                 });
+                _showLabelDialog(selectedDay);
               },
               calendarBuilders: CalendarBuilders(
                 markerBuilder: (context, date, events) {
@@ -102,20 +104,43 @@ class _AnalyticsScreenContentState extends State<AnalyticsScreenContent> {
                         .toList();
                     return log.any((d) => isSameDay(d, date));
                   }).toList();
-                  return completedHabits.isNotEmpty
-                      ? Container(
-                    margin: const EdgeInsets.all(4.0),
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.green,
-                    ),
-                    width: 6,
-                    height: 6,
-                  )
-                      : null;
+                  final isBookmarked = _dateLabels.containsKey(date);
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (completedHabits.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.all(4.0),
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.green,
+                          ),
+                          width: 6,
+                          height: 6,
+                        ),
+                      if (isBookmarked)
+                        Container(
+                          margin: const EdgeInsets.all(4.0),
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.yellow,
+                          ),
+                          width: 6,
+                          height: 6,
+                        ),
+                    ],
+                  );
                 },
               ),
             ),
+            if (_selectedDay != null && _dateLabels[_selectedDay] != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  'Label for ${_selectedDay!.day}/${_selectedDay!.month}/${_selectedDay!.year}: ${_dateLabels[_selectedDay]!}',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                ),
+              ),
             const SizedBox(height: 16),
             // Habit Completion Notes
             Text('Completion Notes', style: Theme.of(context).textTheme.headlineSmall),
@@ -125,13 +150,27 @@ class _AnalyticsScreenContentState extends State<AnalyticsScreenContent> {
                   .toList();
               final completedDays = log.length;
               final successRate = (completedDays / 30) * 100;
+              final notes = h['notes'] as String? ?? '';
               return Card(
                 child: ListTile(
                   title: Text(h['title'] as String? ?? 'Untitled'),
-                  subtitle: Text(
-                    'Category: ${h['category'] ?? 'Other'}\n'
-                        'Success Rate: ${successRate.toStringAsFixed(1)}%\n'
-                        'Completed: $completedDays/30 days',
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Category: ${h['category'] ?? 'Other'}\n'
+                            'Success Rate: ${successRate.toStringAsFixed(1)}%\n'
+                            'Completed: $completedDays/30 days',
+                      ),
+                      if (notes.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(
+                            'Notes: $notes',
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                          ),
+                        ),
+                    ],
                   ),
                   leading: CircleAvatar(
                     backgroundColor: Color(h['color'] as int? ?? Colors.blue.value),
@@ -139,6 +178,10 @@ class _AnalyticsScreenContentState extends State<AnalyticsScreenContent> {
                       IconData(h['icon'] as int? ?? Icons.favorite.codePoint, fontFamily: 'MaterialIcons'),
                       color: Colors.white,
                     ),
+                  ),
+                  trailing: IconButton(
+                    icon: Icon(Icons.edit_note, color: Theme.of(context).colorScheme.primary),
+                    onPressed: () => _showNotesDialog(context, habitProvider, h['id'] as int, notes),
                   ),
                 ),
               ).animate().fadeIn().slideY();
@@ -191,6 +234,67 @@ class _AnalyticsScreenContentState extends State<AnalyticsScreenContent> {
             }),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showLabelDialog(DateTime date) {
+    final controller = TextEditingController(text: _dateLabels[date]);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Label for ${date.day}/${date.month}/${date.year}'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: 'Enter label (e.g., Milestone, Event)'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                if (controller.text.isEmpty) {
+                  _dateLabels.remove(date);
+                } else {
+                  _dateLabels[date] = controller.text;
+                }
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNotesDialog(BuildContext context, HabitProvider habitProvider, int habitId, String currentNotes) {
+    final controller = TextEditingController(text: currentNotes);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Completion Notes'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: 'Enter notes for this habit'),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              habitProvider.updateHabitNotes(habitId, controller.text);
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }

@@ -28,7 +28,7 @@ class SettingsScreen extends StatelessWidget {
 
   void _shareApp(BuildContext context) {
     Share.share(
-      'Check out the Habit Tracker App by Sajid Ali Mohammed Sheikh! Build better habits today: https://habittracker.app',
+      'Check out the Habit Tracker App by Sajid Alimahamad Shaikh! Build better habits today: https://habittracker.app',
       subject: 'Try Habit Tracker App!',
     );
   }

@@ -9,10 +9,8 @@ class HabitProvider with ChangeNotifier {
   bool _isDarkMode = true;
   final BehaviorSubject<bool> _loading = BehaviorSubject.seeded(false);
 
-  HabitProvider();
-
-  void _initialize() async {
-    await loadHabits();
+  HabitProvider() {
+    loadHabits();
   }
 
   List<Map<String, dynamic>> get habits => List.unmodifiable(_habits);
@@ -89,44 +87,49 @@ class HabitProvider with ChangeNotifier {
     }
   }
 
-  Future<void> toggleCompletion(int index, DateTime date) async {
+  Future<int> toggleCompletion(int index, DateTime date) async {
     if (index >= 0 && index < _habits.length) {
       final habit = _habits[index];
       List<DateTime> completionLog = (jsonDecode(habit['completion_log'] as String? ?? '[]') as List)
           .map((d) => DateTime.parse(d as String))
           .toList();
       final today = DateTime(date.year, date.month, date.day);
+      int oldStreak = _calculateStreak(completionLog, date);
       if (completionLog.any((d) => d.year == today.year && d.month == today.month && d.day == today.day)) {
         completionLog.removeWhere((d) => d.year == today.year && d.month == today.month && d.day == today.day);
       } else {
         completionLog.add(today);
       }
       completionLog.sort((a, b) => a.compareTo(b));
-      final streak = _calculateStreak(completionLog, today);
+      final newStreak = _calculateStreak(completionLog, date);
       await editHabit(habit['id'], {
         'completion_log': jsonEncode(completionLog.map((d) => d.toIso8601String()).toList()),
-        'streak': streak,
+        'streak': newStreak,
       });
+      return newStreak > oldStreak ? newStreak : 0; // Return new streak if increased, else 0
     }
+    return 0;
   }
 
-  int _calculateStreak(List<DateTime> completionLog, DateTime today) {
+  int _calculateStreak(List<DateTime> completionLog, DateTime referenceDate) {
     if (completionLog.isEmpty) return 0;
-    completionLog.sort((a, b) => b.compareTo(a));
-    final todayStart = DateTime(today.year, today.month, today.day);
+    completionLog.sort((a, b) => b.compareTo(a)); // Sort descending (most recent first)
+    final referenceStart = DateTime(referenceDate.year, referenceDate.month, referenceDate.day);
     int streak = 0;
     DateTime? lastDate;
 
     for (var date in completionLog) {
       final dateStart = DateTime(date.year, date.month, date.day);
       if (lastDate == null) {
-        if (dateStart.isBefore(todayStart) || dateStart.isAtSameMomentAs(todayStart)) {
+        if (dateStart.isBefore(referenceStart.add(const Duration(days: 1))) &&
+            (dateStart.isAfter(referenceStart.subtract(const Duration(days: 1))) ||
+                dateStart.isAtSameMomentAs(referenceStart))) {
           streak = 1;
           lastDate = dateStart;
         }
         continue;
       }
-      if (dateStart.difference(lastDate).inDays == -1) {
+      if (dateStart.isAtSameMomentAs(lastDate.subtract(const Duration(days: 1)))) {
         streak++;
         lastDate = dateStart;
       } else if (dateStart.difference(lastDate).inDays < -1) {
@@ -134,9 +137,6 @@ class HabitProvider with ChangeNotifier {
       }
     }
 
-    if (lastDate != null && todayStart.difference(lastDate).inDays > 1) {
-      return 0;
-    }
     return streak;
   }
 

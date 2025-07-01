@@ -1,95 +1,125 @@
 import 'package:flutter/material.dart';
-import 'package:animations/animations.dart';
+import 'package:habit_tracker_app/services/navigation_service.dart';
+import 'package:get_it/get_it.dart';
 
-class DailyQuotesScreen extends StatefulWidget {
+class DailyQuotesScreen extends StatelessWidget {
   const DailyQuotesScreen({super.key});
 
   @override
-  _DailyQuotesScreenState createState() => _DailyQuotesScreenState();
-}
-
-class _DailyQuotesScreenState extends State<DailyQuotesScreen> {
-  final List<Map<String, String>> quotes = [
-    {'text': 'The best way to predict the future is to create it.', 'image': 'assets/images/quote1.jpg'},
-    {'text': 'Success is not final, failure is not fatal.', 'image': 'assets/images/quote2.jpg'},
-    {'text': 'Believe you can and you\'re halfway there.', 'image': 'assets/images/quote3.jpg'},
-  ];
-  int _currentIndex = 0;
-
-  void _nextQuote() {
-    setState(() {
-      _currentIndex = (_currentIndex + 1) % quotes.length;
-    });
-  }
-
-  void _previousQuote() {
-    setState(() {
-      _currentIndex = (_currentIndex - 1) % quotes.length;
-      if (_currentIndex < 0) _currentIndex = quotes.length - 1;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final navigationService = GetIt.I<NavigationService>();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daily Quotes', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(
+          'Daily Quotes',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary),
+        ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 10,
-        shadowColor: Colors.blue.withOpacity(0.3),
+        shadowColor: Colors.blue.withValues(alpha: 0.3),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
+          onPressed: () => navigationService.goBack(),
+        ),
       ),
-      body: PageTransitionSwitcher(
-        duration: const Duration(milliseconds: 500),
-        transitionBuilder: (child, animation, secondaryAnimation) {
-          return FadeThroughTransition(
-            animation: animation,
-            secondaryAnimation: secondaryAnimation,
-            child: child,
-          );
-        },
-        child: Card(
-          key: ValueKey(_currentIndex),
-          elevation: 8,
-          margin: const EdgeInsets.all(16.0),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(screenWidth * 0.05),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: Image.asset(
+                    'assets/images/quote1.jpg',
+                    width: screenWidth * 0.9,
+                    height: screenHeight * 0.3,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                child: Image.asset(quotes[_currentIndex]['image']!, fit: BoxFit.cover, height: 200, width: double.infinity),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  quotes[_currentIndex]['text']!,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Theme.of(context).colorScheme.onSurface),
-                  textAlign: TextAlign.center,
+              const SizedBox(height: 16.0),
+              Text(
+                '"The only way to do great work is to love what you do."',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontStyle: FontStyle.italic,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                '- Steve Jobs',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: Image.asset(
+                    'assets/images/quote2.jpg',
+                    width: screenWidth * 0.9,
+                    height: screenHeight * 0.3,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              Text(
+                '"Success is not final, failure is not fatal: It is the courage to continue that counts."',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontStyle: FontStyle.italic,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                '- Winston Churchill',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: Image.asset(
+                    'assets/images/quote3.jpg',
+                    width: screenWidth * 0.9,
+                    height: screenHeight * 0.3,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              Text(
+                '"Believe you can and you\'re halfway there."',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontStyle: FontStyle.italic,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                '- Theodore Roosevelt',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ],
           ),
         ),
-      ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            onPressed: _previousQuote,
-            child: const Icon(Icons.arrow_back),
-            heroTag: 'prevQuote',
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-          ),
-          const SizedBox(width: 8),
-          FloatingActionButton(
-            onPressed: _nextQuote,
-            child: const Icon(Icons.arrow_forward),
-            heroTag: 'nextQuote',
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-          ),
-        ],
       ),
     );
   }

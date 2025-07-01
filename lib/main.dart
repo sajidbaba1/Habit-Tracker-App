@@ -40,14 +40,16 @@ class MyApp extends StatelessWidget {
               useMaterial3: true,
               textTheme: const TextTheme(
                 headlineLarge: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-                bodyLarge: TextStyle(color: Colors.black54),
+                headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+                bodyLarge: TextStyle(fontSize: 16, color: Colors.black54),
+                bodySmall: TextStyle(fontSize: 14, color: Colors.black54),
               ),
               elevatedButtonTheme: ElevatedButtonThemeData(
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.black87,
                   backgroundColor: Colors.blueAccent,
                   elevation: 8,
-                  shadowColor: Colors.blue.withOpacity(0.5),
+                  shadowColor: Colors.blue.withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -64,7 +66,9 @@ class MyApp extends StatelessWidget {
               ),
               textTheme: const TextTheme(
                 headlineLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                bodyLarge: TextStyle(color: Colors.white70),
+                headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                bodyLarge: TextStyle(fontSize: 16, color: Colors.white70),
+                bodySmall: TextStyle(fontSize: 14, color: Colors.white70),
               ),
             ),
             themeMode: habitProvider != null && habitProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,

@@ -1,22 +1,87 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
 import 'package:habit_tracker_app/screens/add_habit_screen.dart';
 import 'package:habit_tracker_app/services/navigation_service.dart';
 import 'package:get_it/get_it.dart';
-import 'package:animations/animations.dart';
 
 class HabitCard extends StatefulWidget {
-  final int index;
-
   const HabitCard({super.key, required this.index});
 
+  final int index;
+
   @override
-  _HabitCardState createState() => _HabitCardState();
+  State<HabitCard> createState() => _HabitCardState();
 }
 
 class _HabitCardState extends State<HabitCard> {
+  final List<String> _motivationalQuotes = [
+    'Every small step counts towards your success!',
+    'Keep pushing forward, you’ve got this!',
+    'Consistency is the key to greatness!',
+    'Your effort today builds your future!',
+    'Stay focused and keep up the momentum!',
+  ];
+
+  String _getRandomQuote() {
+    return _motivationalQuotes[Random().nextInt(_motivationalQuotes.length)];
+  }
+
+  void showCongratulationCard(String habitTitle, int streak) {
+    if (streak > 0) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(
+            'Congratulations!',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+          ),
+          content: Text(
+            'You increased the streak for "$habitTitle" to $streak day${streak > 1 ? 's' : ''}!\n\n"${_getRandomQuote()}"',
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void confirmDelete(HabitProvider habitProvider, int habitId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Delete Habit?',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+        ),
+        content: Text(
+          'Are you sure you want to delete this habit? This action cannot be undone.',
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          ),
+          TextButton(
+            onPressed: () {
+              habitProvider.deleteHabit(habitId);
+              Navigator.of(context).pop();
+            },
+            child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final habitProvider = Provider.of<HabitProvider>(context);
@@ -33,47 +98,6 @@ class _HabitCardState extends State<HabitCard> {
     final today = DateTime.now();
     final isTodayCompleted = completionLog.any((d) =>
     d.year == today.year && d.month == today.month && d.day == today.day);
-
-    void _showCongratulationCard() {
-      if (habit['streak'] == 7) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Congratulations!', style: TextStyle(fontWeight: FontWeight.bold)),
-            content: const Text("You've reached a 7-day streak! Keep it up!"),
-            actions: [
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        );
-      }
-    }
-
-    void _confirmDelete() {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Delete Habit?', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: const Text('Are you sure you want to delete this habit? This action cannot be undone.'),
-          actions: [
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.pop(context),
-            ),
-            TextButton(
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                habitProvider.deleteHabit(habit['id'] as int);
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      );
-    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
@@ -123,7 +147,7 @@ class _HabitCardState extends State<HabitCard> {
                       ),
                       IconButton(
                         icon: Icon(Icons.delete, size: 24, color: Theme.of(context).colorScheme.error),
-                        onPressed: _confirmDelete,
+                        onPressed: () => confirmDelete(habitProvider, habit['id'] as int),
                       ),
                     ],
                   ),
@@ -134,7 +158,7 @@ class _HabitCardState extends State<HabitCard> {
                   padding: const EdgeInsets.only(left: 8.0, top: 4.0),
                   child: Text(
                     'Checklist enabled',
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                   ),
                 ),
               const SizedBox(height: 8.0),
@@ -146,9 +170,12 @@ class _HabitCardState extends State<HabitCard> {
                   final date = DateTime.now().subtract(Duration(days: 6 - dayIndex));
                   final isCompleted = completionLog.any((d) => d.year == date.year && d.month == date.month && d.day == date.day);
                   return GestureDetector(
-                    onTap: () {
-                      habitProvider.toggleCompletion(widget.index, date);
+                    onTap: () async {
+                      final newStreak = await habitProvider.toggleCompletion(widget.index, date);
                       setState(() {});
+                      if (newStreak > 0) {
+                        showCongratulationCard(habit['title'] as String, newStreak);
+                      }
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
@@ -159,7 +186,7 @@ class _HabitCardState extends State<HabitCard> {
                         boxShadow: isCompleted
                             ? [
                           BoxShadow(
-                            color: Colors.green[900]!.withOpacity(0.3),
+                            color: Colors.green[900]!.withValues(alpha: 0.3),
                             spreadRadius: 1,
                             blurRadius: 3,
                           ),
@@ -189,10 +216,12 @@ class _HabitCardState extends State<HabitCard> {
                   ),
                   IconButton(
                     icon: Icon(Icons.check, size: 24, color: isTodayCompleted ? Colors.green : Theme.of(context).colorScheme.onSurface),
-                    onPressed: () {
-                      habitProvider.toggleCompletion(widget.index, today);
+                    onPressed: () async {
+                      final newStreak = await habitProvider.toggleCompletion(widget.index, today);
                       setState(() {});
-                      _showCongratulationCard();
+                      if (newStreak > 0) {
+                        showCongratulationCard(habit['title'] as String, newStreak);
+                      }
                     },
                   ),
                 ],

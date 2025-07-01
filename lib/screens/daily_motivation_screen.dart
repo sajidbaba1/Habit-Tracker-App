@@ -1,66 +1,78 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:habit_tracker_app/services/navigation_service.dart';
+import 'package:get_it/get_it.dart';
 
 class DailyMotivationScreen extends StatelessWidget {
   const DailyMotivationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final motivations = [
-      {
-        'title': 'Stay Focused',
-        'content': 'Keep pushing forward every day. Consistency is key to success.',
-        'image': 'assets/images/motivation1.jpg'
-      },
-      {
-        'title': 'Embrace Challenges',
-        'content': 'Growth comes from overcoming obstacles. Face them with courage.',
-        'image': 'assets/images/motivation2.jpg'
-      },
-    ];
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final motivation = motivations[DateTime.now().day % motivations.length];
+    final navigationService = GetIt.I<NavigationService>();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daily Motivation', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(
+          'Daily Motivation',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary),
+        ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 10,
-        shadowColor: Colors.blue.withOpacity(0.3),
+        shadowColor: Colors.blue.withValues(alpha: 0.3),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
+          onPressed: () => navigationService.goBack(),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Card(
-          elevation: 8,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(screenWidth * 0.05),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: Image.asset(
+                    'assets/images/motivation1.jpg',
+                    width: screenWidth * 0.9,
+                    height: screenHeight * 0.3,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                child: Image.asset(motivation['image']!, fit: BoxFit.cover, height: 200, width: double.infinity),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      motivation['title']!,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      motivation['content']!,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface),
-                    ),
-                    const SizedBox(height: 16),
-                    Text('Date: $today', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
-                  ],
+              const SizedBox(height: 16.0),
+              Text(
+                'Stay Focused!',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                'Keep your eyes on your goals. Every small step counts towards your success.',
+                style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface),
+              ),
+              const SizedBox(height: 16.0),
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: Image.asset(
+                    'assets/images/motivation2.jpg',
+                    width: screenWidth * 0.9,
+                    height: screenHeight * 0.3,
+                    fit: BoxFit.cover,
+                  ),
                 ),
+              ),
+              const SizedBox(height: 16.0),
+              Text(
+                'You Are Enough!',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                'Believe in yourself. You have everything you need to achieve greatness.',
+                style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface),
               ),
             ],
           ),

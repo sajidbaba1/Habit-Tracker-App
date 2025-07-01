@@ -6,12 +6,12 @@ import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 
 class AddHabitScreen extends StatefulWidget {
-  final int? habitId;
-
   const AddHabitScreen({super.key, this.habitId});
 
+  final int? habitId;
+
   @override
-  _AddHabitScreenState createState() => _AddHabitScreenState();
+  State<AddHabitScreen> createState() => _AddHabitScreenState();
 }
 
 class _AddHabitScreenState extends State<AddHabitScreen> {
@@ -22,13 +22,6 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
   IconData _selectedIcon = Icons.favorite;
   String _frequency = 'Everyday';
   bool _checklistEnabled = false;
-
-  final List<Color> _colorOptions = [
-    Colors.blue, Colors.red, Colors.green, Colors.yellow, Colors.purple,
-    Colors.orange, Colors.pink, Colors.teal, Colors.indigo, Colors.brown,
-    Colors.cyan, Colors.amber, Colors.lime, Colors.deepPurple, Colors.deepOrange,
-    Colors.lightGreen, Colors.blueGrey, Colors.black, Colors.white70, Colors.grey,
-  ];
 
   final List<IconData> _iconOptions = [
     Icons.favorite, Icons.book, Icons.lightbulb, Icons.cake,
@@ -52,7 +45,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
       if (habit.isNotEmpty) {
         _titleController.text = habit['title'] as String? ?? '';
         _descController.text = habit['description'] as String? ?? '';
-        _selectedColor = Color(habit['color'] as int? ?? Colors.blue.value);
+        _selectedColor = Color(habit['color'] as int? ?? Colors.blue.toARGB32());
         _selectedIcon = IconData(habit['icon'] as int? ?? Icons.favorite.codePoint, fontFamily: 'MaterialIcons');
         _frequency = habit['frequency'] as String? ?? 'Everyday';
         _checklistEnabled = habit['checklistEnabled'] as bool? ?? false;
@@ -71,18 +64,18 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Pick a Color', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Pick a Color', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
         content: SingleChildScrollView(
           child: ColorPicker(
             pickerColor: _selectedColor,
             onColorChanged: (color) => setState(() => _selectedColor = color),
-            showLabel: true,
+            labelTypes: const [],
             pickerAreaHeightPercent: 0.8,
           ),
         ),
         actions: [
           TextButton(
-            child: const Text('Done', style: TextStyle(color: Colors.blueAccent)),
+            child: Text('Done', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -94,14 +87,14 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Pick an Icon', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Pick an Icon', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
         content: SizedBox(
           width: MediaQuery.of(context).size.width * 0.9,
           child: Wrap(
             spacing: 8.0,
             runSpacing: 8.0,
             children: _iconOptions.map((icon) => IconButton(
-              icon: Icon(icon, size: 30),
+              icon: Icon(icon, size: 30, color: Theme.of(context).colorScheme.onSurface),
               onPressed: () {
                 setState(() => _selectedIcon = icon);
                 Navigator.pop(context);
@@ -121,10 +114,13 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.habitId == null ? 'Add New Habit' : 'Edit Habit', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary)),
+        title: Text(
+          widget.habitId == null ? 'Add New Habit' : 'Edit Habit',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary),
+        ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 10,
-        shadowColor: Colors.blue.withOpacity(0.3),
+        shadowColor: Colors.blue.withValues(alpha: 0.3),
       ),
       body: Form(
         key: _formKey,
@@ -140,6 +136,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                   labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
                 ),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 validator: (value) => value?.isEmpty ?? true ? 'Please enter a habit title' : null,
               ),
               const SizedBox(height: 16.0),
@@ -150,6 +147,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                   labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
                 ),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 16.0),
               Row(
@@ -164,7 +162,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                         width: screenWidth * 0.4,
                         child: ElevatedButton(
                           onPressed: _openColorPicker,
-                          child: const Text('Pick Color'),
+                          child: Text('Pick Color', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
                         ),
                       ),
                     ],
@@ -178,7 +176,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                         width: screenWidth * 0.4,
                         child: ElevatedButton(
                           onPressed: _openIconPicker,
-                          child: const Text('Pick Icon'),
+                          child: Text('Pick Icon', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
                         ),
                       ),
                     ],
@@ -212,13 +210,13 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                 title: Text('Checklist', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface)),
                 value: _checklistEnabled,
                 onChanged: (value) => setState(() => _checklistEnabled = value),
-                tileColor: Theme.of(context).cardColor.withOpacity(0.1),
+                tileColor: Theme.of(context).cardColor.withValues(alpha: 0.1),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               if (_checklistEnabled)
                 Padding(
                   padding: const EdgeInsets.only(left: 16.0),
-                  child: Text('Add checklist items later.', style: TextStyle(fontSize: 12.0, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                  child: Text('Add checklist items later.', style: TextStyle(fontSize: 12.0, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                 ),
               const SizedBox(height: 20.0),
               Center(
@@ -228,13 +226,14 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                       final habit = {
                         'title': _titleController.text,
                         'description': _descController.text,
-                        'color': _selectedColor.value,
+                        'color': _selectedColor.toARGB32(),
                         'icon': _selectedIcon.codePoint,
                         'frequency': _frequency,
                         'streak': widget.habitId != null ? (habitProvider.habits.firstWhere((h) => h['id'] == widget.habitId, orElse: () => {})['streak'] ?? 0) : 0,
                         'completion_log': widget.habitId != null ? (habitProvider.habits.firstWhere((h) => h['id'] == widget.habitId, orElse: () => {})['completion_log'] ?? '[]') : '[]',
                         'checklistEnabled': _checklistEnabled,
                       };
+                      final navigator = Navigator.of(context);
                       try {
                         if (widget.habitId != null) {
                           await habitProvider.editHabit(widget.habitId!, habit);
@@ -243,8 +242,9 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                         }
                         navigationService.goBack();
                       } catch (e) {
+                        navigator.popUntil((route) => route.isFirst);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to save habit: $e')),
+                          SnackBar(content: Text('Failed to save habit: $e', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
                         );
                       }
                     }
@@ -253,7 +253,10 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text(widget.habitId == null ? 'Save Habit' : 'Update Habit', style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
+                  child: Text(
+                    widget.habitId == null ? 'Save Habit' : 'Update Habit',
+                    style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onPrimary),
+                  ),
                 ),
               ),
             ],

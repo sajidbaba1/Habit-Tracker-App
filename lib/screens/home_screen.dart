@@ -10,7 +10,6 @@ import 'package:habit_tracker_app/providers/habit_provider.dart';
 import 'package:habit_tracker_app/widgets/habit_card.dart';
 import 'package:habit_tracker_app/services/navigation_service.dart';
 import 'package:get_it/get_it.dart';
-import 'package:animations/animations.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -41,7 +40,7 @@ class HomeScreen extends StatelessWidget {
         ],
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 10,
-        shadowColor: Colors.blue.withOpacity(0.3),
+        shadowColor: Colors.blue.withValues(alpha: 0.3),
       ),
       drawer: Drawer(
         child: ListView(
@@ -76,7 +75,7 @@ class HomeScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16.0),
               child: Text(
                 DateFormat('d MMMM yyyy').format(DateTime.now()),
-                style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
               ),
             ),
             Expanded(
@@ -87,7 +86,7 @@ class HomeScreen extends StatelessWidget {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (habitProvider.habits.isEmpty) {
-                    return Center(child: Text('No habits yet. Add a new one!', style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))));
+                    return Center(child: Text('No habits yet. Add a new one!', style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))));
                   }
                   return RefreshIndicator(
                     onRefresh: () => habitProvider.loadHabits(),

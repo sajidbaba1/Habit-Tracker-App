@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Added for HapticFeedback
-import 'package:flutter_animate/flutter_animate.dart'; // For animations
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
@@ -36,7 +36,7 @@ class _HabitCardState extends State<HabitCard> {
 
   void showCongratulationCard(String habitTitle, int streak) {
     if (streak > 0) {
-      HapticFeedback.vibrate(); // Vibration on card show
+      HapticFeedback.vibrate();
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -55,11 +55,11 @@ class _HabitCardState extends State<HabitCard> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.emoji_events, size: 60, color: Colors.white), // Trophy icon
+                const Icon(Icons.emoji_events, size: 60, color: Colors.white),
                 const SizedBox(height: 10),
                 Text(
                   'Congratulations!',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -69,18 +69,18 @@ class _HabitCardState extends State<HabitCard> {
                 Text(
                   'You increased the streak for "$habitTitle" to $streak day${streak > 1 ? 's' : ''}!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                  style: const TextStyle(fontSize: 18, color: Colors.white),
                 ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slide(),
                 const SizedBox(height: 10),
                 Text(
                   '"${_getRandomQuote()}"',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.white70),
+                  style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.white70),
                 ).animate().fadeIn(duration: const Duration(milliseconds: 500)).shake(),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
-                    HapticFeedback.vibrate(); // Vibration on button press
+                    HapticFeedback.vibrate();
                     Navigator.of(context).pop();
                   },
                   style: ElevatedButton.styleFrom(
@@ -118,14 +118,14 @@ class _HabitCardState extends State<HabitCard> {
         actions: [
           TextButton(
             onPressed: () {
-              HapticFeedback.vibrate(); // Vibration on button press
+              HapticFeedback.vibrate();
               Navigator.of(context).pop();
             },
             child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           ),
           TextButton(
             onPressed: () {
-              HapticFeedback.vibrate(); // Vibration on button press
+              HapticFeedback.vibrate();
               habitProvider.deleteHabit(habitId);
               Navigator.of(context).pop();
             },
@@ -158,7 +158,7 @@ class _HabitCardState extends State<HabitCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
-          color: Color(habit['color'] as int),
+          color: Color(habit['color'] as int? ?? Colors.blue.value),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -180,13 +180,13 @@ class _HabitCardState extends State<HabitCard> {
                   Row(
                     children: [
                       Icon(
-                        IconData(habit['icon'] as int, fontFamily: 'MaterialIcons'),
+                        IconData(habit['icon'] as int? ?? Icons.favorite.codePoint, fontFamily: 'MaterialIcons'),
                         size: 24,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                       const SizedBox(width: 8.0),
                       Text(
-                        habit['title'] as String,
+                        habit['title'] as String? ?? 'Untitled',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                       ),
                     ],
@@ -196,7 +196,7 @@ class _HabitCardState extends State<HabitCard> {
                       IconButton(
                         icon: Icon(Icons.edit, size: 24, color: Theme.of(context).colorScheme.onSurface),
                         onPressed: () {
-                          HapticFeedback.vibrate(); // Vibration on button press
+                          HapticFeedback.vibrate();
                           GetIt.I<NavigationService>().navigateTo(AddHabitScreen(habitId: habit['id']));
                         },
                       ),
@@ -219,7 +219,7 @@ class _HabitCardState extends State<HabitCard> {
               IconButton(
                 icon: Icon(_showProgressBar ? Icons.bar_chart : Icons.list),
                 onPressed: () {
-                  HapticFeedback.vibrate(); // Vibration on button press
+                  HapticFeedback.vibrate();
                   setState(() => _showProgressBar = !_showProgressBar);
                 },
                 color: Theme.of(context).colorScheme.onSurface,
@@ -237,53 +237,53 @@ class _HabitCardState extends State<HabitCard> {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Text(
-                    'Previous Streak: ${habit['streak']} days\nLast Updated: ${completionLog.isNotEmpty ? DateFormat('d MMMM').format(completionLog.last) : 'N/A'}',
+                    'Previous Streak: ${habit['streak'] ?? 0} days\nLast Updated: ${completionLog.isNotEmpty ? DateFormat('d MMMM').format(completionLog.last) : 'N/A'}',
                     style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
                   ),
                 ),
               const SizedBox(height: 8.0),
+              // GitHub-Style Streak Grid
+              Text('30-Day Streak', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+              const SizedBox(height: 8.0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    DateFormat('d MMM').format(DateTime.now().subtract(const Duration(days: 29))),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                  ),
+                  Text(
+                    DateFormat('d MMM').format(DateTime.now()),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                  ),
+                ],
+              ),
               GridView.count(
-                crossAxisCount: 7,
+                crossAxisCount: 10,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                children: List.generate(7, (dayIndex) {
-                  final date = DateTime.now().subtract(Duration(days: 6 - dayIndex));
+                childAspectRatio: 1,
+                mainAxisSpacing: 4,
+                crossAxisSpacing: 4,
+                children: List.generate(30, (dayIndex) {
+                  final date = DateTime.now().subtract(Duration(days: 29 - dayIndex));
                   final isCompleted = completionLog.any((d) => d.year == date.year && d.month == date.month && d.day == date.day);
                   return GestureDetector(
                     onTap: () async {
-                      HapticFeedback.vibrate(); // Vibration on button press
+                      HapticFeedback.vibrate();
                       final newStreak = await habitProvider.toggleCompletion(widget.index, date);
                       setState(() {});
                       if (newStreak > 0) {
-                        showCongratulationCard(habit['title'] as String, newStreak);
+                        showCongratulationCard(habit['title'] as String? ?? 'Untitled', newStreak);
                       }
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.all(4.0),
                       decoration: BoxDecoration(
-                        color: isCompleted ? Colors.green : Colors.grey[300],
-                        borderRadius: BorderRadius.circular(8.0),
-                        boxShadow: isCompleted
-                            ? [
-                          BoxShadow(
-                            color: Colors.green[900]!.withValues(alpha: 0.3),
-                            spreadRadius: 1,
-                            blurRadius: 3,
-                          ),
-                        ]
-                            : null,
+                        color: isCompleted ? Colors.green[700] : Colors.grey[300],
+                        borderRadius: BorderRadius.circular(4.0),
                       ),
-                      child: Center(
-                        child: Text(
-                          date.day.toString(),
-                          style: TextStyle(
-                            color: isCompleted ? Colors.white : Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
+                    ).animate().fadeIn(),
                   );
                 }),
               ),
@@ -292,17 +292,17 @@ class _HabitCardState extends State<HabitCard> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Streak: ${habit['streak']} days',
+                    'Streak: ${habit['streak'] ?? 0} days',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
                   ),
                   IconButton(
                     icon: Icon(Icons.check, size: 24, color: isTodayCompleted ? Colors.green : Theme.of(context).colorScheme.onSurface),
                     onPressed: () async {
-                      HapticFeedback.vibrate(); // Vibration on button press
+                      HapticFeedback.vibrate();
                       final newStreak = await habitProvider.toggleCompletion(widget.index, today);
                       setState(() {});
                       if (newStreak > 0) {
-                        showCongratulationCard(habit['title'] as String, newStreak);
+                        showCongratulationCard(habit['title'] as String? ?? 'Untitled', newStreak);
                       }
                     },
                   ),

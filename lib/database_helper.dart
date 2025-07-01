@@ -4,7 +4,7 @@ import 'package:path/path.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
-  static const int _currentVersion = 2;
+  static const int _currentVersion = 3;
 
   DatabaseHelper._init();
 
@@ -34,6 +34,7 @@ class DatabaseHelper {
       color INTEGER NOT NULL,
       icon INTEGER NOT NULL,
       frequency TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'Other',
       streak INTEGER NOT NULL,
       completion_log TEXT NOT NULL,
       checklistEnabled INTEGER NOT NULL DEFAULT 0
@@ -45,6 +46,9 @@ class DatabaseHelper {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE habits ADD COLUMN checklistEnabled INTEGER NOT NULL DEFAULT 0');
     }
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE habits ADD COLUMN category TEXT NOT NULL DEFAULT \'Other\'');
+    }
   }
 
   Future<int> insertHabit(Map<String, dynamic> habit) async {
@@ -52,6 +56,7 @@ class DatabaseHelper {
     return await db.insert('habits', {
       ...habit,
       'checklistEnabled': habit['checklistEnabled'] is bool ? (habit['checklistEnabled'] ? 1 : 0) : habit['checklistEnabled'] ?? 0,
+      'category': habit['category'] ?? 'Other',
     });
   }
 
@@ -60,6 +65,7 @@ class DatabaseHelper {
     return await db.update('habits', {
       ...habit,
       'checklistEnabled': habit['checklistEnabled'] is bool ? (habit['checklistEnabled'] ? 1 : 0) : habit['checklistEnabled'] ?? 0,
+      'category': habit['category'] ?? 'Other',
     }, where: 'id = ?', whereArgs: [id]);
   }
 

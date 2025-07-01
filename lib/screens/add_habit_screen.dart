@@ -5,6 +5,10 @@ import 'package:habit_tracker_app/services/navigation_service.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 
+extension ColorExtension on Color {
+  int toInt() => value;
+}
+
 class AddHabitScreen extends StatefulWidget {
   const AddHabitScreen({super.key, this.habitId});
 
@@ -22,6 +26,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
   IconData _selectedIcon = Icons.favorite;
   String _frequency = 'Everyday';
   bool _checklistEnabled = false;
+  String _category = 'Other';
 
   final List<IconData> _iconOptions = [
     Icons.favorite, Icons.book, Icons.lightbulb, Icons.cake,
@@ -32,6 +37,8 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
     Icons.lock, Icons.mail, Icons.map, Icons.menu_book, Icons.mic, Icons.movie,
     Icons.palette, Icons.pets, Icons.phone, Icons.photo, Icons.play_arrow,
   ];
+
+  final List<String> _categoryOptions = ['Health', 'Productivity', 'Leisure', 'Learning', 'Other'];
 
   @override
   void initState() {
@@ -45,10 +52,11 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
       if (habit.isNotEmpty) {
         _titleController.text = habit['title'] as String? ?? '';
         _descController.text = habit['description'] as String? ?? '';
-        _selectedColor = Color(habit['color'] as int? ?? Colors.blue.toARGB32());
+        _selectedColor = Color(habit['color'] as int? ?? Colors.blue.value);
         _selectedIcon = IconData(habit['icon'] as int? ?? Icons.favorite.codePoint, fontFamily: 'MaterialIcons');
         _frequency = habit['frequency'] as String? ?? 'Everyday';
         _checklistEnabled = habit['checklistEnabled'] as bool? ?? false;
+        _category = habit['category'] as String? ?? 'Other';
       }
     }
   }
@@ -150,6 +158,20 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                 style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 16.0),
+              DropdownButtonFormField<String>(
+                value: _category,
+                items: _categoryOptions
+                    .map((category) => DropdownMenuItem(value: category, child: Text(category)))
+                    .toList(),
+                onChanged: (newValue) => setState(() => _category = newValue!),
+                decoration: InputDecoration(
+                  labelText: 'Category',
+                  labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
+                ),
+                dropdownColor: Theme.of(context).colorScheme.surface,
+              ),
+              const SizedBox(height: 16.0),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -226,9 +248,10 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                       final habit = {
                         'title': _titleController.text,
                         'description': _descController.text,
-                        'color': _selectedColor.toARGB32(),
+                        'color': _selectedColor.toInt(),
                         'icon': _selectedIcon.codePoint,
                         'frequency': _frequency,
+                        'category': _category,
                         'streak': widget.habitId != null ? (habitProvider.habits.firstWhere((h) => h['id'] == widget.habitId, orElse: () => {})['streak'] ?? 0) : 0,
                         'completion_log': widget.habitId != null ? (habitProvider.habits.firstWhere((h) => h['id'] == widget.habitId, orElse: () => {})['completion_log'] ?? '[]') : '[]',
                         'checklistEnabled': _checklistEnabled,

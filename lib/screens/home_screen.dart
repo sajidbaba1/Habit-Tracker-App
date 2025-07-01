@@ -9,24 +9,47 @@ import 'package:habit_tracker_app/screens/daily_motivation_screen.dart';
 import 'package:habit_tracker_app/screens/daily_quotes_screen.dart';
 import 'package:habit_tracker_app/screens/chatbot_screen.dart';
 import 'package:habit_tracker_app/screens/analytics_screen.dart';
-import 'package:habit_tracker_app/screens/code_tracker_screen.dart';
+import 'package:habit_tracker_app/screens/habit_tracker_screen.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
 import 'package:habit_tracker_app/widgets/habit_card.dart';
 import 'package:habit_tracker_app/services/navigation_service.dart';
 import 'package:get_it/get_it.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _screens = [
+    const HomeContent(),
+    const AnalyticsScreenContent(),
+    const AddHabitScreen(),
+    const DailyMotivationScreenContent(),
+    const ChatbotScreenContent(),
+    const HabitTrackerScreenContent(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  int _calculateSJDCoin(HabitProvider habitProvider) {
+    return habitProvider.habits.fold(0, (sum, habit) => sum + (habit['streak'] as int? ?? 0));
+  }
 
   @override
   Widget build(BuildContext context) {
     final habitProvider = Provider.of<HabitProvider>(context, listen: false);
-    final navigationService = GetIt.I<NavigationService>();
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDarkMode = habitProvider.isDarkMode;
-
     return Scaffold(
-      appBar: AppBar(
+      appBar: _selectedIndex == 0
+          ? AppBar(
         title: AnimatedTextKit(
           animatedTexts: [
             TypewriterAnimatedText(
@@ -38,32 +61,58 @@ class HomeScreen extends StatelessWidget {
           totalRepeatCount: 1,
         ),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Row(
+              children: [
+                const Icon(Icons.monetization_on, color: Colors.yellow, size: 24),
+                const SizedBox(width: 4),
+                Consumer<HabitProvider>(
+                  builder: (context, provider, child) => Text(
+                    'SJD: ${_calculateSJDCoin(provider)}',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.settings, size: 30),
             onPressed: () {
               HapticFeedback.vibrate();
-              navigationService.navigateTo(const SettingsScreen());
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
             },
           ),
         ],
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 10,
         shadowColor: Colors.blue.withValues(alpha: 0.3),
-      ),
-      drawer: Drawer(
+      )
+          : null,
+      drawer: _selectedIndex == 0
+          ? Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
               decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
-              child: Text('Menu', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 24)),
+              child: Text(
+                'Menu',
+                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 24),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.lightbulb),
               title: const Text('Daily Motivation'),
               onTap: () {
                 HapticFeedback.vibrate();
-                navigationService.navigateTo(const DailyMotivationScreen());
+                setState(() => _selectedIndex = 3);
               },
             ),
             ListTile(
@@ -71,7 +120,7 @@ class HomeScreen extends StatelessWidget {
               title: const Text('Daily Quotes'),
               onTap: () {
                 HapticFeedback.vibrate();
-                navigationService.navigateTo(const DailyQuotesScreen());
+                setState(() => _selectedIndex = 3); // Use Motivation screen for now, can separate later
               },
             ),
             ListTile(
@@ -79,96 +128,31 @@ class HomeScreen extends StatelessWidget {
               title: const Text('Settings'),
               onTap: () {
                 HapticFeedback.vibrate();
-                navigationService.navigateTo(const SettingsScreen());
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                );
               },
             ),
           ],
         ),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                DateFormat('d MMMM yyyy').format(DateTime.now()),
-                style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
-              ),
-            ),
-            Expanded(
-              child: FutureBuilder<void>(
-                future: habitProvider.loadHabits(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (habitProvider.habits.isEmpty) {
-                    return const Center(child: Text('No habits yet. Add a new one!', style: TextStyle(fontSize: 18)));
-                  }
-                  return RefreshIndicator(
-                    onRefresh: () => habitProvider.loadHabits(),
-                    child: ListView.builder(
-                      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 8.0),
-                      itemCount: habitProvider.habits.length,
-                      itemBuilder: (context, index) => AnimatedBuilder(
-                        animation: habitProvider,
-                        builder: (context, child) => HabitCard(index: index),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomAppBar(
-        color: Theme.of(context).colorScheme.primary,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.checklist, size: 30),
-              tooltip: 'Habit Tracker',
-              onPressed: () {
-                HapticFeedback.vibrate();
-                navigationService.navigateTo(const CodeTrackerScreen());
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.analytics, size: 30),
-              tooltip: 'Analytics',
-              onPressed: () {
-                HapticFeedback.vibrate();
-                navigationService.navigateTo(const AnalyticsScreen());
-              },
-            ),
-            FloatingActionButton(
-              onPressed: () {
-                HapticFeedback.vibrate();
-                navigationService.navigateTo(const AddHabitScreen());
-              },
-              child: const Icon(Icons.add, size: 30),
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-            ),
-            IconButton(
-              icon: const Icon(Icons.lightbulb, size: 30),
-              tooltip: 'Motivation',
-              onPressed: () {
-                HapticFeedback.vibrate();
-                navigationService.navigateTo(const DailyMotivationScreen());
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.chat, size: 30),
-              tooltip: 'Chatbot',
-              onPressed: () {
-                HapticFeedback.vibrate();
-                navigationService.navigateTo(const ChatbotScreen());
-              },
-            ),
-          ],
-        ),
+      )
+          : null,
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.analytics), label: 'Analytics'),
+          BottomNavigationBarItem(icon: Icon(Icons.checklist), label: 'Tracker'),
+          BottomNavigationBarItem(icon: Icon(Icons.add_circle, size: 40), label: 'Add'),
+          BottomNavigationBarItem(icon: Icon(Icons.lightbulb), label: 'Motivation'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chatbot'),
+        ],
+        currentIndex: _selectedIndex == 2 ? 2 : _selectedIndex > 2 ? _selectedIndex - 1 : _selectedIndex,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
+        onTap: _onItemTapped,
       ),
     );
   }
@@ -178,5 +162,53 @@ class HomeScreen extends StatelessWidget {
     if (hour < 12) return 'Good Morning';
     if (hour < 17) return 'Good Afternoon';
     return 'Good Evening';
+  }
+}
+
+class HomeContent extends StatelessWidget {
+  const HomeContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final habitProvider = Provider.of<HabitProvider>(context, listen: false);
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              DateFormat('d MMMM yyyy').format(DateTime.now()),
+              style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<bool>(
+              stream: habitProvider.loading,
+              builder: (context, snapshot) {
+                if (snapshot.data == true) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (habitProvider.habits.isEmpty) {
+                  return const Center(child: Text('No habits yet. Add a new one!', style: TextStyle(fontSize: 18)));
+                }
+                return RefreshIndicator(
+                  onRefresh: () => habitProvider.loadHabits(),
+                  child: ListView.builder(
+                    padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 8.0),
+                    itemCount: habitProvider.habits.length,
+                    itemBuilder: (context, index) => AnimatedBuilder(
+                      animation: habitProvider,
+                      builder: (context, child) => HabitCard(index: index),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:habit_tracker_app/services/navigation_service.dart';
 import 'package:get_it/get_it.dart';
-import 'package:intl/intl.dart';
+import 'package:habit_tracker_app/extensions/date_time_extension.dart';
 
 class DailyQuotesScreen extends StatelessWidget {
   const DailyQuotesScreen({super.key});
@@ -14,7 +14,7 @@ class DailyQuotesScreen extends StatelessWidget {
 
   Map<String, String> _getDailyQuote() {
     final now = DateTime.now();
-    final dayOfYear = now.dayOfYear; // Custom extension method for day of year
+    final dayOfYear = now.dayOfYear;
     final index = dayOfYear % _quoteContent.length;
     return _quoteContent[index];
   }
@@ -37,7 +37,7 @@ class DailyQuotesScreen extends StatelessWidget {
         shadowColor: Colors.blue.withValues(alpha: 0.3),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
-          onPressed: () => navigationService.goBack(),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SafeArea(
@@ -79,12 +79,5 @@ class DailyQuotesScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-extension DateTimeExtension on DateTime {
-  int get dayOfYear {
-    final startOfYear = DateTime(year, 1, 1);
-    return difference(startOfYear).inDays + 1;
   }
 }

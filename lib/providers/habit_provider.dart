@@ -25,7 +25,7 @@ class HabitProvider with ChangeNotifier {
         final completionLog = (jsonDecode(habit['completion_log'] as String? ?? '[]') as List)
             .map((d) => DateTime.parse(d as String))
             .toList();
-        final streak = _calculateStreak(completionLog, DateTime.now());
+        final streak = calculateLongestConsecutiveStreak(completionLog, DateTime.now());
         if (streak != (habit['streak'] as int)) {
           await editHabit(habit['id'], {'streak': streak});
         }
@@ -94,7 +94,7 @@ class HabitProvider with ChangeNotifier {
           .map((d) => DateTime.parse(d as String))
           .toList();
       final today = DateTime(date.year, date.month, date.day);
-      int oldStreak = _calculateStreak(completionLog, today);
+      int oldStreak = calculateLongestConsecutiveStreak(completionLog, today);
       if (completionLog.any((d) => d.year == today.year && d.month == today.month && d.day == today.day)) {
         completionLog.removeWhere((d) => d.year == today.year && d.month == today.month && d.day == today.day);
       } else {
@@ -102,7 +102,7 @@ class HabitProvider with ChangeNotifier {
       }
       completionLog.sort((a, b) => a.compareTo(b));
 
-      final newStreak = _calculateStreak(completionLog, today);
+      final newStreak = calculateLongestConsecutiveStreak(completionLog, today);
       await editHabit(habit['id'], {
         'completion_log': jsonEncode(completionLog.map((d) => d.toIso8601String()).toList()),
         'streak': newStreak,
@@ -112,32 +112,43 @@ class HabitProvider with ChangeNotifier {
     return 0;
   }
 
-  int _calculateStreak(List<DateTime> completionLog, DateTime referenceDate) {
+  int calculateLongestConsecutiveStreak(List<DateTime> completionLog, DateTime referenceDate) {
     if (completionLog.isEmpty) return 0;
-    completionLog.sort((a, b) => a.compareTo(b)); // Sort ascending
-    final referenceStart = DateTime(referenceDate.year, referenceDate.month, referenceDate.day);
-    int streak = 0;
+
+    // Sort dates in ascending order
+    completionLog.sort((a, b) => a.compareTo(b));
+
+    int maxStreak = 0;
+    int currentStreak = 0;
     DateTime? lastDate;
 
     for (var date in completionLog) {
       final dateStart = DateTime(date.year, date.month, date.day);
-      if (dateStart.isAfter(referenceStart)) continue; // Only consider dates up to reference
+      // Only consider dates up to and including the reference date
+      if (dateStart.isAfter(referenceDate)) continue;
+
       if (lastDate == null) {
-        if (dateStart.isAtSameMomentAs(referenceStart) || dateStart.isBefore(referenceStart)) {
-          streak = 1;
+        currentStreak = 1;
+        lastDate = dateStart;
+      } else {
+        final daysDiff = lastDate.difference(dateStart).inDays;
+        if (daysDiff == -1) { // Consecutive day (e.g., July 1 to June 30)
+          currentStreak++;
+          lastDate = dateStart;
+        } else if (daysDiff < -1) { // Gap detected
+          maxStreak = maxStreak > currentStreak ? maxStreak : currentStreak;
+          currentStreak = 1;
           lastDate = dateStart;
         }
-        continue;
-      }
-      if (lastDate.difference(dateStart).inDays == 1) {
-        streak++;
-        lastDate = dateStart;
-      } else if (lastDate.difference(dateStart).inDays > 1) {
-        break;
       }
     }
 
-    return streak;
+    // Update maxStreak with the last streak if it's the longest, and ensure it includes the reference date
+    if (lastDate != null && !lastDate.isAfter(referenceDate)) {
+      maxStreak = maxStreak > currentStreak ? maxStreak : currentStreak;
+    }
+
+    return maxStreak;
   }
 
   void toggleTheme(bool value) {

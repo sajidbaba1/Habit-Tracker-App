@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Added import for DateFormat
+import 'package:flutter/services.dart'; // Added for HapticFeedback
+import 'package:flutter_animate/flutter_animate.dart'; // For animations
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
 import 'package:habit_tracker_app/screens/add_habit_screen.dart';
@@ -34,23 +36,69 @@ class _HabitCardState extends State<HabitCard> {
 
   void showCongratulationCard(String habitTitle, int streak) {
     if (streak > 0) {
+      HapticFeedback.vibrate(); // Vibration on card show
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text(
-            'Congratulations!',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-          ),
-          content: Text(
-            'You increased the streak for "$habitTitle" to $streak day${streak > 1 ? 's' : ''}!\n\n"${_getRandomQuote()}"',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('OK', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+        barrierDismissible: false,
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.yellow[700]!, Colors.orange[400]!],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
             ),
-          ],
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.emoji_events, size: 60, color: Colors.white), // Trophy icon
+                const SizedBox(height: 10),
+                Text(
+                  'Congratulations!',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ).animate().fadeIn(duration: const Duration(milliseconds: 500)).scale(),
+                const SizedBox(height: 10),
+                Text(
+                  'You increased the streak for "$habitTitle" to $streak day${streak > 1 ? 's' : ''}!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ).animate().fadeIn(duration: const Duration(milliseconds: 700)).slide(),
+                const SizedBox(height: 10),
+                Text(
+                  '"${_getRandomQuote()}"',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.white70),
+                ).animate().fadeIn(duration: const Duration(milliseconds: 900)).shake(),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    HapticFeedback.vibrate(); // Vibration on button press
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.orange[700],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('OK'),
+                ).animate().fadeIn(duration: const Duration(milliseconds: 1100)).scale(),
+              ],
+            ),
+          ).animate(
+            onComplete: (controller) => controller.repeat(),
+            effects: const [
+              FadeEffect(duration: Duration(milliseconds: 2000)),
+              ScaleEffect(duration: Duration(milliseconds: 2000)),
+            ],
+          ),
         ),
       );
     }
@@ -70,11 +118,15 @@ class _HabitCardState extends State<HabitCard> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              HapticFeedback.vibrate(); // Vibration on button press
+              Navigator.of(context).pop();
+            },
             child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           ),
           TextButton(
             onPressed: () {
+              HapticFeedback.vibrate(); // Vibration on button press
               habitProvider.deleteHabit(habitId);
               Navigator.of(context).pop();
             },
@@ -145,6 +197,7 @@ class _HabitCardState extends State<HabitCard> {
                       IconButton(
                         icon: Icon(Icons.edit, size: 24, color: Theme.of(context).colorScheme.onSurface),
                         onPressed: () {
+                          HapticFeedback.vibrate(); // Vibration on button press
                           GetIt.I<NavigationService>().navigateTo(AddHabitScreen(habitId: habit['id']));
                         },
                       ),
@@ -166,7 +219,10 @@ class _HabitCardState extends State<HabitCard> {
                 ),
               IconButton(
                 icon: Icon(_showProgressBar ? Icons.bar_chart : Icons.list),
-                onPressed: () => setState(() => _showProgressBar = !_showProgressBar),
+                onPressed: () {
+                  HapticFeedback.vibrate(); // Vibration on button press
+                  setState(() => _showProgressBar = !_showProgressBar);
+                },
                 color: Theme.of(context).colorScheme.onSurface,
               ),
               if (_showProgressBar)
@@ -196,6 +252,7 @@ class _HabitCardState extends State<HabitCard> {
                   final isCompleted = completionLog.any((d) => d.year == date.year && d.month == date.month && d.day == date.day);
                   return GestureDetector(
                     onTap: () async {
+                      HapticFeedback.vibrate(); // Vibration on button press
                       final newStreak = await habitProvider.toggleCompletion(widget.index, date);
                       setState(() {});
                       if (newStreak > 0) {
@@ -242,6 +299,7 @@ class _HabitCardState extends State<HabitCard> {
                   IconButton(
                     icon: Icon(Icons.check, size: 24, color: isTodayCompleted ? Colors.green : Theme.of(context).colorScheme.onSurface),
                     onPressed: () async {
+                      HapticFeedback.vibrate(); // Vibration on button press
                       final newStreak = await habitProvider.toggleCompletion(widget.index, today);
                       setState(() {});
                       if (newStreak > 0) {

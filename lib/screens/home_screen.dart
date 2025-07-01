@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Added for HapticFeedback
 import 'package:provider/provider.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:intl/intl.dart';
@@ -36,7 +37,10 @@ class HomeScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, size: 30),
-            onPressed: () => navigationService.navigateTo(const SettingsScreen()),
+            onPressed: () {
+              HapticFeedback.vibrate(); // Vibration on button press
+              navigationService.navigateTo(const SettingsScreen());
+            },
           ),
         ],
         backgroundColor: Theme.of(context).colorScheme.primary,
@@ -54,17 +58,26 @@ class HomeScreen extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.lightbulb),
               title: const Text('Daily Motivation'),
-              onTap: () => navigationService.navigateTo(const DailyMotivationScreen()), // Changed from onPressed to onTap
+              onTap: () {
+                HapticFeedback.vibrate(); // Vibration on button press
+                navigationService.navigateTo(const DailyMotivationScreen());
+              },
             ),
             ListTile(
               leading: const Icon(Icons.format_quote),
               title: const Text('Daily Quotes'),
-              onTap: () => navigationService.navigateTo(const DailyQuotesScreen()), // Changed from onPressed to onTap
+              onTap: () {
+                HapticFeedback.vibrate(); // Vibration on button press
+                navigationService.navigateTo(const DailyQuotesScreen());
+              },
             ),
             ListTile(
               leading: const Icon(Icons.settings),
               title: const Text('Settings'),
-              onTap: () => navigationService.navigateTo(const SettingsScreen()), // Changed from onPressed to onTap
+              onTap: () {
+                HapticFeedback.vibrate(); // Vibration on button press
+                navigationService.navigateTo(const SettingsScreen());
+              },
             ),
           ],
         ),
@@ -111,7 +124,10 @@ class HomeScreen extends StatelessWidget {
         children: [
           FloatingActionButton.extended(
             heroTag: 'add_habit_button',
-            onPressed: () => navigationService.navigateTo(const AddHabitScreen()),
+            onPressed: () {
+              HapticFeedback.vibrate(); // Vibration on button press
+              navigationService.navigateTo(const AddHabitScreen());
+            },
             label: const Text('Add Habit'),
             icon: const Icon(Icons.add, size: 30),
             backgroundColor: Theme.of(context).colorScheme.secondary,
@@ -122,7 +138,10 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(width: 10),
           FloatingActionButton.extended(
             heroTag: 'motivation_button',
-            onPressed: () => navigationService.navigateTo(const DailyMotivationScreen()),
+            onPressed: () {
+              HapticFeedback.vibrate(); // Vibration on button press
+              navigationService.navigateTo(const DailyMotivationScreen());
+            },
             label: const Text('Motivation'),
             icon: const Icon(Icons.lightbulb, size: 30),
             backgroundColor: Theme.of(context).colorScheme.secondary,

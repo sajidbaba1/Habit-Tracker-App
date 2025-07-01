@@ -64,19 +64,19 @@ class _HabitCardState extends State<HabitCard> {
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
-                ).animate().fadeIn(duration: const Duration(milliseconds: 500)).scale(),
+                ).animate().fadeIn(duration: const Duration(milliseconds: 300)).scale(),
                 const SizedBox(height: 10),
                 Text(
                   'You increased the streak for "$habitTitle" to $streak day${streak > 1 ? 's' : ''}!',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 18, color: Colors.white),
-                ).animate().fadeIn(duration: const Duration(milliseconds: 700)).slide(),
+                ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slide(),
                 const SizedBox(height: 10),
                 Text(
                   '"${_getRandomQuote()}"',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.white70),
-                ).animate().fadeIn(duration: const Duration(milliseconds: 900)).shake(),
+                ).animate().fadeIn(duration: const Duration(milliseconds: 500)).shake(),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
@@ -89,14 +89,13 @@ class _HabitCardState extends State<HabitCard> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   child: const Text('OK'),
-                ).animate().fadeIn(duration: const Duration(milliseconds: 1100)).scale(),
+                ).animate().fadeIn(duration: const Duration(milliseconds: 600)).scale(),
               ],
             ),
           ).animate(
-            onComplete: (controller) => controller.repeat(),
             effects: const [
-              FadeEffect(duration: Duration(milliseconds: 2000)),
-              ScaleEffect(duration: Duration(milliseconds: 2000)),
+              FadeEffect(duration: Duration(milliseconds: 700)),
+              ScaleEffect(duration: Duration(milliseconds: 700)),
             ],
           ),
         ),

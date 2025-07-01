@@ -1,6 +1,6 @@
 name: habit_tracker_app
 description: A Flutter habit tracker app with enhanced features.
-version: 1.0.0
+version: 1.0.0+1 # Added build number for better versioning
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -31,5 +31,13 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/
+
+# Optional: Add analyzer settings for better linting
+analyzer:
+  errors:
+    missing_required_param: error
+    missing_return: error
+    unused_import: warning
+
+# Optional: Enable null safety and other optimizations
+# (Already enforced by SDK >=3.0.0)

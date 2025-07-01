@@ -24,6 +24,31 @@ class MyApp extends StatelessWidget {
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
                 seedColor: Colors.blue,
+                brightness: Brightness.light,
+                primary: Colors.blueAccent,
+                onPrimary: Colors.black,
+                secondary: Colors.tealAccent,
+                onSecondary: Colors.black,
+                surface: Colors.white,
+                onSurface: Colors.black87,
+              ),
+              useMaterial3: true,
+              textTheme: const TextTheme(
+                headlineLarge: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+                bodyLarge: TextStyle(color: Colors.black54),
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.black87,
+                  backgroundColor: Colors.blueAccent,
+                  elevation: 8,
+                  shadowColor: Colors.blue.withOpacity(0.5),
+                ),
+              ),
+            ),
+            darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.blue,
                 brightness: Brightness.dark,
                 primary: Colors.blueAccent,
                 onPrimary: Colors.white,
@@ -32,21 +57,11 @@ class MyApp extends StatelessWidget {
                 surface: Colors.grey[900],
                 onSurface: Colors.white,
               ),
-              useMaterial3: true,
               textTheme: const TextTheme(
                 headlineLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 bodyLarge: TextStyle(color: Colors.white70),
               ),
-              elevatedButtonTheme: ElevatedButtonThemeData(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.blueAccent,
-                  elevation: 8,
-                  shadowColor: Colors.blue.withOpacity(0.5),
-                ),
-              ),
             ),
-            darkTheme: ThemeData.dark(useMaterial3: true),
             themeMode: habitProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             home: const HomeScreen(),
           );

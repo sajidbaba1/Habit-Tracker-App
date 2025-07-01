@@ -25,15 +25,7 @@ class HabitProvider with ChangeNotifier {
     _loading.add(true);
     try {
       final loadedHabits = await _dbHelper.getHabits();
-      _habits = loadedHabits;
-      for (var habit in _habits) {
-        final completionLog = (jsonDecode(habit['completion_log'] as String) as List)
-            .map((d) => DateTime.parse(d as String)).toList();
-        final streak = _calculateStreak(completionLog, DateTime.now());
-        if (streak != (habit['streak'] as int)) {
-          await updateHabit(habit['id'] as int, {'streak': streak});
-        }
-      }
+      _habits = loadedHabits ?? [];
     } catch (e) {
       _habits = [];
     } finally {
@@ -45,96 +37,33 @@ class HabitProvider with ChangeNotifier {
   Future<void> addHabit(Map<String, dynamic> habit) async {
     _loading.add(true);
     try {
-      final id = await _dbHelper.insertHabit(habit);
-      await loadHabits();
+      await _dbHelper.insertHabit(habit);
+      await loadHabits(); // Single refresh
     } catch (e) {
       rethrow;
     } finally {
       _loading.add(false);
     }
-  }
-
-  Future<void> updateHabit(int id, Map<String, dynamic> updates) async {
-    _loading.add(true);
-    try {
-      await _dbHelper.updateHabit(id, updates);
-      await loadHabits();
-    } catch (e) {
-      rethrow;
-    } finally {
-      _loading.add(false);
-    }
-  }
-
-  void toggleCompletion(int index, BuildContext context, DateTime date) async {
-    final habit = _habits[index];
-    List<DateTime> completionLog = (jsonDecode(habit['completion_log'] as String) as List)
-        .map((d) => DateTime.parse(d as String)).toList();
-    final today = DateTime(date.year, date.month, date.day);
-    final isCompleted = completionLog.any((d) => d.year == today.year && d.month == today.month && d.day == today.day);
-    if (isCompleted) {
-      completionLog.removeWhere((d) => d.year == today.year && d.month == today.month && d.day == today.day);
-    } else {
-      completionLog.add(today);
-    }
-    completionLog.sort((a, b) => a.compareTo(b));
-    final streak = _calculateStreak(completionLog, today);
-    final oldStreak = habit['streak'] as int;
-    await updateHabit(habit['id'] as int, {
-      'completion_log': jsonEncode(completionLog.map((d) => d.toIso8601String()).toList()),
-      'streak': streak,
-    });
-    if (!isCompleted && streak > oldStreak) {
-      _showCongratulation(context, streak - oldStreak); // Show congrats if streak increased
-    }
-    notifyListeners();
-  }
-
-  int _calculateStreak(List<DateTime> completionLog, DateTime today) {
-    if (completionLog.isEmpty) return 0;
-    completionLog.sort((a, b) => b.compareTo(a)); // Sort descending
-    final todayStart = DateTime(today.year, today.month, today.day);
-    int streak = 0;
-    DateTime? lastDate;
-
-    for (var date in completionLog) {
-      final dateStart = DateTime(date.year, date.month, date.day);
-      if (lastDate == null) {
-        streak = 1;
-        lastDate = dateStart;
-        continue;
-      }
-      if (dateStart.difference(lastDate).inDays == -1) {
-        streak++;
-        lastDate = dateStart;
-      } else if (dateStart.difference(lastDate).inDays < -1) {
-        break;
-      }
-    }
-
-    // Ensure streak includes today if completed
-    if (completionLog.contains(todayStart)) {
-      final lastCompleted = completionLog[0];
-      if (todayStart.difference(lastCompleted).inDays <= 0) {
-        streak = completionLog.length;
-      }
-    } else if (lastDate != null && todayStart.difference(lastDate).inDays > 1) {
-      return 0; // Reset if gap is more than 1 day
-    }
-    return streak;
   }
 
   Future<void> editHabit(int id, Map<String, dynamic> updatedHabit) async {
     _loading.add(true);
     try {
-      await _dbHelper.updateHabit(id, {
-        'title': updatedHabit['title'],
-        'description': updatedHabit['description'],
-        'color': updatedHabit['color'],
-        'icon': updatedHabit['icon'],
-        'frequency': updatedHabit['frequency'],
-        'checklistEnabled': updatedHabit['checklistEnabled'] ? 1 : 0,
-      });
+      await _dbHelper.updateHabit(id, updatedHabit);
+      final updatedHabits = await _dbHelper.getHabits(); // Fetch updated habits
+      _habits = updatedHabits ?? [];
+      notifyListeners(); // Notify after updating local state
+    } catch (e) {
+      rethrow;
+    } finally {
+      _loading.add(false);
+    }
+  }
+
+  Future<void> deleteHabit(int id) async {
+    _loading.add(true);
+    try {
+      await _dbHelper.deleteHabit(id);
       await loadHabits();
     } catch (e) {
       rethrow;
@@ -143,25 +72,47 @@ class HabitProvider with ChangeNotifier {
     }
   }
 
+  Future<void> toggleCompletion(int index, DateTime date) async {
+    final habit = _habits[index];
+    List<DateTime> completionLog = (jsonDecode(habit['completion_log'] as String) as List)
+        .map((d) => DateTime.parse(d as String))
+        .toList();
+    final today = DateTime(date.year, date.month, date.day);
+    bool wasCompleted = completionLog.contains(today);
+    if (wasCompleted) {
+      completionLog.remove(today);
+    } else {
+      completionLog.add(today);
+    }
+    completionLog.sort((a, b) => a.compareTo(b));
+
+    final encodableLog = completionLog.map((dt) => dt.toIso8601String()).toList();
+    final streak = _calculateStreak(completionLog, today);
+    await editHabit(habit['id'] as int, {
+      'completion_log': jsonEncode(encodableLog),
+      'streak': streak,
+    });
+  }
+
+  int _calculateStreak(List<DateTime> completionLog, DateTime today) {
+    if (completionLog.isEmpty) return 0;
+    completionLog.sort((a, b) => b.compareTo(a));
+    int streak = 1;
+    DateTime lastDate = completionLog[0];
+    for (int i = 1; i < completionLog.length; i++) {
+      if (completionLog[i].difference(lastDate).inDays == -1) {
+        streak++;
+        lastDate = completionLog[i];
+      } else if (completionLog[i].difference(lastDate).inDays < -1) {
+        break;
+      }
+    }
+    return streak;
+  }
+
   void toggleTheme(bool value) {
     _isDarkMode = value;
     notifyListeners();
-  }
-
-  void _showCongratulation(BuildContext context, int streakIncrease) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Congratulations!', style: TextStyle(color: Colors.green)),
-        content: Text('Your streak increased by $streakIncrease day${streakIncrease > 1 ? 's' : ''}! Keep it up!'),
-        actions: [
-          TextButton(
-            child: const Text('OK', style: TextStyle(color: Colors.blueAccent)),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
-      ),
-    );
   }
 
   @override

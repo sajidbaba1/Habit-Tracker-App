@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="google_api_key">AIzaSyDGaEHVQTbDiLQDLJfsUwdT6JJX-6qBAMc</string>
+    <string name="google_app_id">1:1007846634399:android:329e6a8a0a2ff93ba683aa</string>
+    <string name="google_project_id">habit-tracker-app-3a60b</string>
+    <string name="google_storage_bucket">habit-tracker-app-3a60b.firebasestorage.app</string>
+    <string name="google_messaging_sender_id">1007846634399</string>
+</resources>

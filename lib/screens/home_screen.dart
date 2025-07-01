@@ -19,6 +19,7 @@ class HomeScreen extends StatelessWidget {
     final habitProvider = Provider.of<HabitProvider>(context);
     final navigationService = GetIt.I<NavigationService>();
     final screenWidth = MediaQuery.of(context).size.width;
+    final isDarkMode = habitProvider.isDarkMode;
 
     return Scaffold(
       appBar: AppBar(
@@ -114,6 +115,7 @@ class HomeScreen extends StatelessWidget {
             label: const Text('Add Habit'),
             icon: const Icon(Icons.add, size: 30),
             backgroundColor: Theme.of(context).colorScheme.secondary,
+            foregroundColor: isDarkMode ? Colors.black : Colors.white,
             elevation: 10,
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16.0))),
           ),
@@ -124,6 +126,7 @@ class HomeScreen extends StatelessWidget {
             label: const Text('Motivation'),
             icon: const Icon(Icons.lightbulb, size: 30),
             backgroundColor: Theme.of(context).colorScheme.secondary,
+            foregroundColor: isDarkMode ? Colors.black : Colors.white,
             elevation: 10,
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16.0))),
           ),

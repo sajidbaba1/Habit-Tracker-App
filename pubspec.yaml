@@ -20,6 +20,8 @@ dependencies:
   get_it: ^7.6.0
   animated_text_kit: ^4.2.2
 
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

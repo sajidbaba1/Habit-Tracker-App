@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Added import for DateFormat
 import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
 import 'package:habit_tracker_app/screens/add_habit_screen.dart';
@@ -24,6 +25,8 @@ class _HabitCardState extends State<HabitCard> {
     'Your effort today builds your future!',
     'Stay focused and keep up the momentum!',
   ];
+
+  bool _showProgressBar = true;
 
   String _getRandomQuote() {
     return _motivationalQuotes[Random().nextInt(_motivationalQuotes.length)];
@@ -161,6 +164,28 @@ class _HabitCardState extends State<HabitCard> {
                     style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                   ),
                 ),
+              IconButton(
+                icon: Icon(_showProgressBar ? Icons.bar_chart : Icons.list),
+                onPressed: () => setState(() => _showProgressBar = !_showProgressBar),
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              if (_showProgressBar)
+                SizedBox(
+                  height: 100,
+                  child: CanvasPanel(
+                    child: CustomPaint(
+                      painter: StreakChartPainter(completionLog: completionLog),
+                    ),
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text(
+                    'Previous Streak: ${habit['streak']} days\nLast Updated: ${completionLog.isNotEmpty ? DateFormat('d MMMM').format(completionLog.last) : 'N/A'}',
+                    style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
+                  ),
+                ),
               const SizedBox(height: 8.0),
               GridView.count(
                 crossAxisCount: 7,
@@ -230,6 +255,50 @@ class _HabitCardState extends State<HabitCard> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class StreakChartPainter extends CustomPainter {
+  final List<DateTime> completionLog;
+
+  StreakChartPainter({required this.completionLog});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.fill;
+
+    final maxHeight = size.height * 0.8;
+    final barWidth = size.width / 7;
+    final today = DateTime.now();
+
+    for (int i = 0; i < 7; i++) {
+      final date = today.subtract(Duration(days: 6 - i));
+      final isCompleted = completionLog.any((d) => d.year == date.year && d.month == date.month && d.day == date.day);
+      final barHeight = isCompleted ? maxHeight : maxHeight * 0.3;
+      final left = i * barWidth;
+      final rect = Rect.fromLTWH(left, size.height - barHeight, barWidth - 2, barHeight);
+      canvas.drawRect(rect, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class CanvasPanel extends StatelessWidget {
+  final Widget child;
+
+  const CanvasPanel({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 100,
+      width: double.infinity,
+      child: child,
     );
   }
 }

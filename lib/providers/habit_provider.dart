@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:habit_tracker_app/database_helper.dart';
+import 'dart:convert';
 import 'package:rxdart/rxdart.dart';
 
 class HabitProvider with ChangeNotifier {
@@ -94,14 +94,15 @@ class HabitProvider with ChangeNotifier {
           .map((d) => DateTime.parse(d as String))
           .toList();
       final today = DateTime(date.year, date.month, date.day);
-      int oldStreak = _calculateStreak(completionLog, date);
+      int oldStreak = _calculateStreak(completionLog, today);
       if (completionLog.any((d) => d.year == today.year && d.month == today.month && d.day == today.day)) {
         completionLog.removeWhere((d) => d.year == today.year && d.month == today.month && d.day == today.day);
       } else {
         completionLog.add(today);
       }
       completionLog.sort((a, b) => a.compareTo(b));
-      final newStreak = _calculateStreak(completionLog, date);
+
+      final newStreak = _calculateStreak(completionLog, today);
       await editHabit(habit['id'], {
         'completion_log': jsonEncode(completionLog.map((d) => d.toIso8601String()).toList()),
         'streak': newStreak,
@@ -113,26 +114,24 @@ class HabitProvider with ChangeNotifier {
 
   int _calculateStreak(List<DateTime> completionLog, DateTime referenceDate) {
     if (completionLog.isEmpty) return 0;
-    completionLog.sort((a, b) => b.compareTo(a)); // Sort descending (most recent first)
+    completionLog.sort((a, b) => a.compareTo(b)); // Sort ascending
     final referenceStart = DateTime(referenceDate.year, referenceDate.month, referenceDate.day);
     int streak = 0;
     DateTime? lastDate;
 
-    for (var date in completionLog) {
+    for (var date in completionLog.reversed) {
       final dateStart = DateTime(date.year, date.month, date.day);
       if (lastDate == null) {
-        if (dateStart.isBefore(referenceStart.add(const Duration(days: 1))) &&
-            (dateStart.isAfter(referenceStart.subtract(const Duration(days: 1))) ||
-                dateStart.isAtSameMomentAs(referenceStart))) {
+        if (dateStart.isBefore(referenceStart.add(const Duration(days: 1)))) {
           streak = 1;
           lastDate = dateStart;
         }
         continue;
       }
-      if (dateStart.isAtSameMomentAs(lastDate.subtract(const Duration(days: 1)))) {
+      if (lastDate.difference(dateStart).inDays == 1) {
         streak++;
         lastDate = dateStart;
-      } else if (dateStart.difference(lastDate).inDays < -1) {
+      } else if (lastDate.difference(dateStart).inDays > 1) {
         break;
       }
     }

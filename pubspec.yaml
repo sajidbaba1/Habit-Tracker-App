@@ -1,37 +1,38 @@
 name: habit_tracker_app
-description: A Flutter habit tracking app with enhanced UI and features.
-publish_to: 'none'
+description: A new Flutter project.
+
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
 version: 1.0.0+1
 
 environment:
-  sdk: '>=2.19.0 <3.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  provider: ^6.0.5
-  sqflite: ^2.3.0
-  path_provider: ^2.1.0
-  path: ^1.8.3
-  intl: ^0.18.1
+  provider: ^6.0.0
+  rxdart: ^0.27.0
+  sqflite: ^2.0.0
+  path: ^1.8.0
+  get_it: ^7.2.0
+  intl: ^0.18.0
   flutter_colorpicker: ^1.0.3
-  rxdart: ^0.27.7
-  animations: ^2.0.8
-  get_it: ^7.6.0
-  animated_text_kit: ^4.2.2
-
-
+  animated_text_kit: ^4.2.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.3
+  flutter_lints: ^2.0.0
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/motivation1.jpg
     - assets/images/motivation2.jpg
+    - assets/images/motivation3.jpg
     - assets/images/quote1.jpg
     - assets/images/quote2.jpg
     - assets/images/quote3.jpg

@@ -119,10 +119,11 @@ class HabitProvider with ChangeNotifier {
     int streak = 0;
     DateTime? lastDate;
 
-    for (var date in completionLog.reversed) {
+    for (var date in completionLog) {
       final dateStart = DateTime(date.year, date.month, date.day);
+      if (dateStart.isAfter(referenceStart)) continue; // Only consider dates up to reference
       if (lastDate == null) {
-        if (dateStart.isBefore(referenceStart.add(const Duration(days: 1)))) {
+        if (dateStart.isAtSameMomentAs(referenceStart) || dateStart.isBefore(referenceStart)) {
           streak = 1;
           lastDate = dateStart;
         }

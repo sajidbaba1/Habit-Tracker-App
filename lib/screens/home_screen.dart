@@ -54,17 +54,17 @@ class HomeScreen extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.lightbulb),
               title: const Text('Daily Motivation'),
-              onTap: () => navigationService.navigateTo(const DailyMotivationScreen()),
+              onTap: () => navigationService.navigateTo(const DailyMotivationScreen()), // Changed from onPressed to onTap
             ),
             ListTile(
               leading: const Icon(Icons.format_quote),
               title: const Text('Daily Quotes'),
-              onTap: () => navigationService.navigateTo(const DailyQuotesScreen()),
+              onTap: () => navigationService.navigateTo(const DailyQuotesScreen()), // Changed from onPressed to onTap
             ),
             ListTile(
               leading: const Icon(Icons.settings),
               title: const Text('Settings'),
-              onTap: () => navigationService.navigateTo(const SettingsScreen()),
+              onTap: () => navigationService.navigateTo(const SettingsScreen()), // Changed from onPressed to onTap
             ),
           ],
         ),
@@ -115,7 +115,7 @@ class HomeScreen extends StatelessWidget {
             label: const Text('Add Habit'),
             icon: const Icon(Icons.add, size: 30),
             backgroundColor: Theme.of(context).colorScheme.secondary,
-            foregroundColor: isDarkMode ? Colors.black : Colors.white,
+            foregroundColor: isDarkMode ? Colors.black : Colors.black,
             elevation: 10,
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16.0))),
           ),
@@ -126,7 +126,7 @@ class HomeScreen extends StatelessWidget {
             label: const Text('Motivation'),
             icon: const Icon(Icons.lightbulb, size: 30),
             backgroundColor: Theme.of(context).colorScheme.secondary,
-            foregroundColor: isDarkMode ? Colors.black : Colors.white,
+            foregroundColor: isDarkMode ? Colors.black : Colors.black,
             elevation: 10,
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16.0))),
           ),

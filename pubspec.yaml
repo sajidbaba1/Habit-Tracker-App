@@ -1,9 +1,7 @@
 name: habit_tracker_app
 description: A new Flutter project.
 
-# The following line prevents the package from being accidentally published to
-# pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: 'none'
 
 version: 1.0.0+1
 
@@ -18,10 +16,12 @@ dependencies:
   sqflite: ^2.0.0
   path: ^1.8.0
   get_it: ^7.2.0
-  intl: ^0.18.0
+  intl: ^0.18.0 # Reverted to latest version
   flutter_colorpicker: ^1.0.3
   animated_text_kit: ^4.2.1
   flutter_animate: ^4.2.0
+  fl_chart: ^0.67.0 # Replaced charts_flutter with fl_chart
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

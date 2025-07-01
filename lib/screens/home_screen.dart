@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Added for HapticFeedback
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +7,9 @@ import 'package:habit_tracker_app/screens/add_habit_screen.dart';
 import 'package:habit_tracker_app/screens/settings_screen.dart';
 import 'package:habit_tracker_app/screens/daily_motivation_screen.dart';
 import 'package:habit_tracker_app/screens/daily_quotes_screen.dart';
+import 'package:habit_tracker_app/screens/chatbot_screen.dart';
+import 'package:habit_tracker_app/screens/analytics_screen.dart';
+import 'package:habit_tracker_app/screens/code_tracker_screen.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
 import 'package:habit_tracker_app/widgets/habit_card.dart';
 import 'package:habit_tracker_app/services/navigation_service.dart';
@@ -17,7 +20,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final habitProvider = Provider.of<HabitProvider>(context);
+    final habitProvider = Provider.of<HabitProvider>(context, listen: false);
     final navigationService = GetIt.I<NavigationService>();
     final screenWidth = MediaQuery.of(context).size.width;
     final isDarkMode = habitProvider.isDarkMode;
@@ -38,7 +41,7 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.settings, size: 30),
             onPressed: () {
-              HapticFeedback.vibrate(); // Vibration on button press
+              HapticFeedback.vibrate();
               navigationService.navigateTo(const SettingsScreen());
             },
           ),
@@ -59,7 +62,7 @@ class HomeScreen extends StatelessWidget {
               leading: const Icon(Icons.lightbulb),
               title: const Text('Daily Motivation'),
               onTap: () {
-                HapticFeedback.vibrate(); // Vibration on button press
+                HapticFeedback.vibrate();
                 navigationService.navigateTo(const DailyMotivationScreen());
               },
             ),
@@ -67,15 +70,39 @@ class HomeScreen extends StatelessWidget {
               leading: const Icon(Icons.format_quote),
               title: const Text('Daily Quotes'),
               onTap: () {
-                HapticFeedback.vibrate(); // Vibration on button press
+                HapticFeedback.vibrate();
                 navigationService.navigateTo(const DailyQuotesScreen());
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.chat),
+              title: const Text('Chatbot'),
+              onTap: () {
+                HapticFeedback.vibrate();
+                navigationService.navigateTo(const ChatbotScreen());
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.analytics),
+              title: const Text('Analytics'),
+              onTap: () {
+                HapticFeedback.vibrate();
+                navigationService.navigateTo(const AnalyticsScreen());
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.code),
+              title: const Text('Habit Tracker'), // Updated for clarity
+              onTap: () {
+                HapticFeedback.vibrate();
+                navigationService.navigateTo(const CodeTrackerScreen());
               },
             ),
             ListTile(
               leading: const Icon(Icons.settings),
               title: const Text('Settings'),
               onTap: () {
-                HapticFeedback.vibrate(); // Vibration on button press
+                HapticFeedback.vibrate();
                 navigationService.navigateTo(const SettingsScreen());
               },
             ),
@@ -93,14 +120,14 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: StreamBuilder<bool>(
-                stream: habitProvider.loading,
+              child: FutureBuilder<void>(
+                future: habitProvider.loadHabits(), // Lazy load habits
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting || snapshot.data == true) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (habitProvider.habits.isEmpty) {
-                    return Center(child: Text('No habits yet. Add a new one!', style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))));
+                    return const Center(child: Text('No habits yet. Add a new one!', style: TextStyle(fontSize: 18)));
                   }
                   return RefreshIndicator(
                     onRefresh: () => habitProvider.loadHabits(),
@@ -125,7 +152,7 @@ class HomeScreen extends StatelessWidget {
           FloatingActionButton.extended(
             heroTag: 'add_habit_button',
             onPressed: () {
-              HapticFeedback.vibrate(); // Vibration on button press
+              HapticFeedback.vibrate();
               navigationService.navigateTo(const AddHabitScreen());
             },
             label: const Text('Add Habit'),
@@ -139,7 +166,7 @@ class HomeScreen extends StatelessWidget {
           FloatingActionButton.extended(
             heroTag: 'motivation_button',
             onPressed: () {
-              HapticFeedback.vibrate(); // Vibration on button press
+              HapticFeedback.vibrate();
               navigationService.navigateTo(const DailyMotivationScreen());
             },
             label: const Text('Motivation'),

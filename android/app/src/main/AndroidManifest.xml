@@ -2,7 +2,7 @@
     package="com.example.habit_tracker_app">
 
     <application
-        android:label="Habit Tracker"
+        android:label="Habit Tracker App"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

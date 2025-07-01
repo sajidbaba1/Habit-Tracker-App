@@ -1,41 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
-import 'package:habit_tracker_app/screens/home_screen.dart';
+import 'package:habit_tracker_app/screens/license_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final habitProvider = Provider.of<HabitProvider>(context, listen: false);
-
+    final habitProvider = Provider.of<HabitProvider>(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        elevation: 10,
-        shadowColor: Colors.blue.withOpacity(0.3),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          Card(
-            elevation: 8,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: SwitchListTile(
-              title: Text('Dark Mode', style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface)),
-              value: habitProvider.isDarkMode,
-              onChanged: (value) {
-                habitProvider.toggleTheme(value);
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const HomeScreen()),
-                );
-              },
-              tileColor: Theme.of(context).cardColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+          SwitchListTile(
+            title: const Text('Dark Mode'),
+            value: habitProvider.isDarkMode,
+            onChanged: (value) {
+              HapticFeedback.vibrate();
+              habitProvider.toggleTheme(value);
+            },
+          ),
+          ListTile(
+            title: const Text('Navigate to Other Apps'),
+            onTap: () {
+              HapticFeedback.vibrate();
+              // Add navigation logic to other apps (e.g., URL launch or app switch)
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Navigate to other apps (placeholder)')));
+            },
+          ),
+          ListTile(
+            title: const Text('License'),
+            onTap: () {
+              HapticFeedback.vibrate();
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const LicenseScreen()));
+            },
           ),
         ],
       ),

@@ -8,7 +8,7 @@ class LicenseScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('License')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -19,7 +19,7 @@ class LicenseScreen extends StatelessWidget {
             ),
             SizedBox(height: 10),
             Text(
-              'Copyright (c) 2025 Your Name',
+              'Copyright (c) 2025 Your Name, Sajid Alimahamad Shaikh', // Added new name
               style: TextStyle(fontSize: 16),
             ),
             SizedBox(height: 10),

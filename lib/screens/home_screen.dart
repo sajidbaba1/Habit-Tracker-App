@@ -75,30 +75,6 @@ class HomeScreen extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.chat),
-              title: const Text('Chatbot'),
-              onTap: () {
-                HapticFeedback.vibrate();
-                navigationService.navigateTo(const ChatbotScreen());
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.analytics),
-              title: const Text('Analytics'),
-              onTap: () {
-                HapticFeedback.vibrate();
-                navigationService.navigateTo(const AnalyticsScreen());
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.checklist),
-              title: const Text('Habit Tracker'),
-              onTap: () {
-                HapticFeedback.vibrate();
-                navigationService.navigateTo(const CodeTrackerScreen());
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.settings),
               title: const Text('Settings'),
               onTap: () {
@@ -146,39 +122,54 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          FloatingActionButton.extended(
-            heroTag: 'add_habit_button',
-            onPressed: () {
-              HapticFeedback.vibrate();
-              navigationService.navigateTo(const AddHabitScreen());
-            },
-            label: const Text('Add Habit'),
-            icon: const Icon(Icons.add, size: 30),
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-            foregroundColor: isDarkMode ? Colors.black : Colors.black,
-            elevation: 10,
-            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16.0))),
-          ),
-          const SizedBox(width: 10),
-          FloatingActionButton.extended(
-            heroTag: 'motivation_button',
-            onPressed: () {
-              HapticFeedback.vibrate();
-              navigationService.navigateTo(const DailyMotivationScreen());
-            },
-            label: const Text('Motivation'),
-            icon: const Icon(Icons.lightbulb, size: 30),
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-            foregroundColor: isDarkMode ? Colors.black : Colors.black,
-            elevation: 10,
-            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16.0))),
-          ),
-        ],
+      bottomNavigationBar: BottomAppBar(
+        color: Theme.of(context).colorScheme.primary,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.checklist, size: 30),
+              tooltip: 'Habit Tracker',
+              onPressed: () {
+                HapticFeedback.vibrate();
+                navigationService.navigateTo(const CodeTrackerScreen());
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.analytics, size: 30),
+              tooltip: 'Analytics',
+              onPressed: () {
+                HapticFeedback.vibrate();
+                navigationService.navigateTo(const AnalyticsScreen());
+              },
+            ),
+            FloatingActionButton(
+              onPressed: () {
+                HapticFeedback.vibrate();
+                navigationService.navigateTo(const AddHabitScreen());
+              },
+              child: const Icon(Icons.add, size: 30),
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+            ),
+            IconButton(
+              icon: const Icon(Icons.lightbulb, size: 30),
+              tooltip: 'Motivation',
+              onPressed: () {
+                HapticFeedback.vibrate();
+                navigationService.navigateTo(const DailyMotivationScreen());
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.chat, size: 30),
+              tooltip: 'Chatbot',
+              onPressed: () {
+                HapticFeedback.vibrate();
+                navigationService.navigateTo(const ChatbotScreen());
+              },
+            ),
+          ],
+        ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 

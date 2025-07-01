@@ -3,9 +3,18 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
 import 'package:habit_tracker_app/screens/license_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  Future<void> _launchURL(BuildContext context, String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch URL')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,11 +33,10 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            title: const Text('Navigate to Other Apps'),
+            title: const Text('Explore Other Apps'),
             onTap: () {
               HapticFeedback.vibrate();
-              // Placeholder for navigation to other apps
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Navigate to other apps (placeholder)')));
+              _launchURL(context, 'https://moodapps.netlify.app');
             },
           ),
           ListTile(

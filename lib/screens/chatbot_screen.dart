@@ -15,7 +15,8 @@ class ChatbotScreen extends StatefulWidget {
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<Map<String, String>> _messages = [];
-  String _apiKey = 'AIzaSyAa-BRgGPZMsWaGj1-9j2VicsWjsTOXdoQ'; // Replace with secure method in production
+  final String _apiKey = 'AIzaSyAa-BRgGPZMsWaGj1-9j2VicsWjsTOXdoQ'; // Replace with secure method in production
+  final String _modelName = 'models/gemini-1.5-flash'; // Updated to a supported model
 
   @override
   void initState() {
@@ -24,33 +25,46 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Future<void> _fetchInitialTips() async {
-    final habitProvider = Provider.of<HabitProvider>(context, listen: false);
-    final habits = habitProvider.habits;
-    final completionData = habits.map((h) => {
-      'title': h['title'],
-      'streak': h['streak'],
-      'completion_log': jsonDecode(h['completion_log'] as String).length,
-    }).toList();
+    try {
+      final habitProvider = Provider.of<HabitProvider>(context, listen: false);
+      final habits = habitProvider.habits;
+      final completionData = habits.map((h) => {
+        'title': h['title'],
+        'streak': h['streak'],
+        'completion_log': jsonDecode(h['completion_log'] as String).length,
+      }).toList();
 
-    final prompt = 'Provide tips for a user with the following habit data: $completionData. Suggest goals based on their streaks and completion logs.';
-    final response = await _getGeminiResponse(prompt);
-    setState(() {
-      _messages.add({'role': 'bot', 'content': response});
-    });
+      final prompt = 'Provide tips for a user with the following habit data: $completionData. Suggest goals based on their streaks and completion logs.';
+      final response = await _getGeminiResponse(prompt);
+      setState(() {
+        _messages.add({'role': 'bot', 'content': response});
+      });
+    } catch (e) {
+      setState(() {
+        _messages.add({'role': 'bot', 'content': 'Error fetching tips: $e'});
+      });
+    }
   }
 
   Future<String> _getGeminiResponse(String prompt) async {
-    final url = Uri.parse('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=$_apiKey'); // Updated model name
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'contents': [{'parts': [{'text': prompt}]}]}),
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['candidates'][0]['content']['parts'][0]['text'] ?? 'No response from Gemini.';
-    } else {
-      return 'Error: ${response.statusCode} - ${response.body}';
+    try {
+      final url = Uri.parse('https://generativelanguage.googleapis.com/v1/$_modelName:generateContent?key=$_apiKey');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [{'parts': [{'text': prompt}]}],
+          'generationConfig': {'temperature': 1, 'topP': 0.95, 'topK': 40, 'maxOutputTokens': 8192} // Optional config
+        }),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['candidates'][0]['content']['parts'][0]['text'] ?? 'No response from Gemini.';
+      } else {
+        return 'Error: ${response.statusCode} - ${response.body}';
+      }
+    } catch (e) {
+      return 'Network error: $e';
     }
   }
 
@@ -62,6 +76,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       _getGeminiResponse(_controller.text).then((response) {
         setState(() {
           _messages.add({'role': 'bot', 'content': response});
+        });
+      }).catchError((e) {
+        setState(() {
+          _messages.add({'role': 'bot', 'content': 'Error sending message: $e'});
         });
       });
       _controller.clear();

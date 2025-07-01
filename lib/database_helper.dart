@@ -4,6 +4,7 @@ import 'package:path/path.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
+  static const int _currentVersion = 2;
 
   DatabaseHelper._init();
 
@@ -16,8 +17,12 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(
+      path,
+      version: _currentVersion,
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB,
+    );
   }
 
   Future _createDB(Database db, int version) async {
@@ -30,24 +35,41 @@ class DatabaseHelper {
       icon INTEGER NOT NULL,
       frequency TEXT NOT NULL,
       streak INTEGER NOT NULL,
-      completion_log TEXT NOT NULL
+      completion_log TEXT NOT NULL,
+      checklistEnabled INTEGER NOT NULL DEFAULT 0
     )
     ''');
   }
 
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE habits ADD COLUMN checklistEnabled INTEGER NOT NULL DEFAULT 0');
+    }
+  }
+
   Future<int> insertHabit(Map<String, dynamic> habit) async {
     final db = await database;
-    return await db.insert('habits', habit);
+    return await db.insert('habits', {
+      ...habit,
+      'checklistEnabled': habit['checklistEnabled'] is bool ? (habit['checklistEnabled'] ? 1 : 0) : habit['checklistEnabled'] ?? 0,
+    });
   }
 
   Future<int> updateHabit(int id, Map<String, dynamic> habit) async {
     final db = await database;
-    return await db.update('habits', habit, where: 'id = ?', whereArgs: [id]);
+    return await db.update('habits', {
+      ...habit,
+      'checklistEnabled': habit['checklistEnabled'] is bool ? (habit['checklistEnabled'] ? 1 : 0) : habit['checklistEnabled'] ?? 0,
+    }, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<List<Map<String, dynamic>>> getHabits() async {
     final db = await database;
-    return await db.query('habits');
+    final habits = await db.query('habits');
+    return habits.map((habit) => {
+      ...habit,
+      'checklistEnabled': habit['checklistEnabled'] == 1,
+    }).toList();
   }
 
   Future<int> deleteHabit(int id) async {

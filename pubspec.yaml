@@ -1,43 +1,35 @@
 name: habit_tracker_app
-description: A Flutter habit tracker app with enhanced features.
-version: 1.0.0+1 # Added build number for better versioning
+description: A Flutter habit tracking app with enhanced UI and features.
+publish_to: 'none'
+version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=2.19.0 <3.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
   provider: ^6.0.5
-  animated_text_kit: ^4.2.2
-  intl: ^0.18.1
-  animations: ^2.0.8
-  firebase_core: ^2.24.2
-  cloud_firestore: ^4.13.6
-  firebase_storage: ^11.6.0
-  firebase_auth: ^4.15.3
-  url_launcher: ^6.2.4
-  cached_network_image: ^3.3.1
-  flutter_colorpicker: ^1.0.3
   sqflite: ^2.3.0
-  path_provider: ^2.1.1
-  rxdart: ^0.28.0
+  path_provider: ^2.1.0
+  path: ^1.8.3
+  intl: ^0.18.1
+  flutter_colorpicker: ^1.0.3
+  rxdart: ^0.27.7
+  animations: ^2.0.8
   get_it: ^7.6.0
+  animated_text_kit: ^4.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.1
+  flutter_lints: ^2.0.3
 
 flutter:
   uses-material-design: true
-
-# Optional: Add analyzer settings for better linting
-analyzer:
-  errors:
-    missing_required_param: error
-    missing_return: error
-    unused_import: warning
-
-# Optional: Enable null safety and other optimizations
-# (Already enforced by SDK >=3.0.0)
+  assets:
+    - assets/images/motivation1.jpg
+    - assets/images/motivation2.jpg
+    - assets/images/quote1.jpg
+    - assets/images/quote2.jpg
+    - assets/images/quote3.jpg

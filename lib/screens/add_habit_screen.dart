@@ -1,45 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
+import 'package:habit_tracker_app/services/navigation_service.dart';
+import 'package:get_it/get_it.dart';
+import 'package:provider/provider.dart';
 
 class AddHabitScreen extends StatefulWidget {
-  const AddHabitScreen({super.key});
+  final int? habitId;
+
+  const AddHabitScreen({super.key, this.habitId});
 
   @override
   _AddHabitScreenState createState() => _AddHabitScreenState();
 }
 
 class _AddHabitScreenState extends State<AddHabitScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   Color _selectedColor = Colors.blue;
   IconData _selectedIcon = Icons.favorite;
   String _frequency = 'Everyday';
   bool _checklistEnabled = false;
-  Map<String, dynamic>? _editingHabit;
-  final _formKey = GlobalKey<FormState>(); // Add form key for validation
+
+  final List<Color> _colorOptions = [
+    Colors.blue, Colors.red, Colors.green, Colors.yellow, Colors.purple,
+    Colors.orange, Colors.pink, Colors.teal, Colors.indigo, Colors.brown,
+    Colors.cyan, Colors.amber, Colors.lime, Colors.deepPurple, Colors.deepOrange,
+    Colors.lightGreen, Colors.blueGrey, Colors.black, Colors.white70, Colors.grey,
+  ];
+
+  final List<IconData> _iconOptions = [
+    Icons.favorite, Icons.book, Icons.lightbulb, Icons.cake,
+    Icons.run_circle, Icons.music_note, Icons.camera, Icons.star,
+    Icons.local_dining, Icons.fitness_center, Icons.spa, Icons.local_drink,
+    Icons.local_florist, Icons.local_library, Icons.local_movies, Icons.local_phone,
+    Icons.local_pizza, Icons.local_play, Icons.local_post_office, Icons.local_taxi,
+    Icons.lock, Icons.mail, Icons.map, Icons.menu_book, Icons.mic, Icons.movie,
+    Icons.palette, Icons.pets, Icons.phone, Icons.photo, Icons.play_arrow,
+  ];
 
   @override
   void initState() {
     super.initState();
-    _titleController.addListener(() => setState(() {})); // Update state on text change
-    _descController.addListener(() => setState(() {})); // Update state on text change
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    if (args != null && mounted) {
-      _editingHabit = args;
-      _titleController.text = args['title'] ?? '';
-      _descController.text = args['description'] ?? '';
-      _selectedColor = Color(args['color'] ?? Colors.blue.value);
-      _selectedIcon = IconData(args['icon'] ?? Icons.favorite.codePoint);
-      _frequency = args['frequency'] ?? 'Everyday';
-      _checklistEnabled = args['checklistEnabled'] ?? false;
-      setState(() {}); // Force UI update with initial values
+    if (widget.habitId != null) {
+      final habitProvider = Provider.of<HabitProvider>(context, listen: false);
+      final habit = habitProvider.habits.firstWhere(
+            (h) => h['id'] == widget.habitId,
+        orElse: () => {},
+      );
+      if (habit.isNotEmpty) {
+        _titleController.text = habit['title'] as String? ?? '';
+        _descController.text = habit['description'] as String? ?? '';
+        _selectedColor = Color(habit['color'] as int? ?? Colors.blue.value);
+        _selectedIcon = IconData(habit['icon'] as int? ?? Icons.favorite.codePoint, fontFamily: 'MaterialIcons');
+        _frequency = habit['frequency'] as String? ?? 'Everyday';
+        _checklistEnabled = habit['checklistEnabled'] as bool? ?? false;
+      }
     }
   }
 
@@ -50,23 +67,6 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
     super.dispose();
   }
 
-  final List<Color> _colorOptions = [
-    Colors.blue, Colors.red, Colors.green, Colors.yellow, Colors.purple,
-    Colors.orange, Colors.pink, Colors.teal, Colors.indigo, Colors.brown,
-    Colors.cyan, Colors.amber, Colors.lime, Colors.deepPurple, Colors.deepOrange,
-    Colors.lightGreen, Colors.blueGrey, Colors.black, Colors.white70, Colors.grey,
-  ];
-
-  final List<IconData> _iconOptions = [
-    Icons.favorite, Icons.book, Icons.lightbulb_outline, Icons.cake,
-    Icons.run_circle, Icons.music_note, Icons.camera, Icons.star,
-    Icons.local_dining, Icons.fitness_center, Icons.spa, Icons.local_drink,
-    Icons.local_florist, Icons.local_library, Icons.local_movies, Icons.local_phone,
-    Icons.local_pizza, Icons.local_play, Icons.local_post_office, Icons.local_taxi,
-    Icons.lock, Icons.mail, Icons.map, Icons.menu_book, Icons.mic, Icons.movie,
-    Icons.palette, Icons.pets, Icons.phone, Icons.photo, Icons.play_arrow,
-  ];
-
   void _openColorPicker() {
     showDialog(
       context: context,
@@ -75,9 +75,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
         content: SingleChildScrollView(
           child: ColorPicker(
             pickerColor: _selectedColor,
-            onColorChanged: (color) {
-              setState(() => _selectedColor = color);
-            },
+            onColorChanged: (color) => setState(() => _selectedColor = color),
             showLabel: true,
             pickerAreaHeightPercent: 0.8,
           ),
@@ -85,10 +83,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
         actions: [
           TextButton(
             child: const Text('Done', style: TextStyle(color: Colors.blueAccent)),
-            onPressed: () {
-              setState(() {}); // Ensure state is updated
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(context),
           ),
         ],
       ),
@@ -121,11 +116,12 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
   @override
   Widget build(BuildContext context) {
     final habitProvider = Provider.of<HabitProvider>(context, listen: false);
+    final navigationService = GetIt.I<NavigationService>();
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_editingHabit?.isNotEmpty ?? false ? 'Edit Habit' : 'Add New Habit', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary)),
+        title: Text(widget.habitId == null ? 'Add New Habit' : 'Edit Habit', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary)),
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 10,
         shadowColor: Colors.blue.withOpacity(0.3),
@@ -190,8 +186,13 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                 ],
               ),
               const SizedBox(height: 16.0),
-              CircleAvatar(backgroundColor: _selectedColor, radius: 20),
-              Icon(_selectedIcon, size: 30, color: Theme.of(context).colorScheme.onSurface),
+              Row(
+                children: [
+                  CircleAvatar(backgroundColor: _selectedColor, radius: 20),
+                  const SizedBox(width: 16.0),
+                  Icon(_selectedIcon, size: 30, color: Theme.of(context).colorScheme.onSurface),
+                ],
+              ),
               const SizedBox(height: 16.0),
               DropdownButtonFormField<String>(
                 value: _frequency,
@@ -223,29 +224,27 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
               Center(
                 child: ElevatedButton(
                   onPressed: () async {
-                    if (_formKey.currentState?.validate() ?? false) {
+                    if (_formKey.currentState!.validate()) {
                       final habit = {
                         'title': _titleController.text,
                         'description': _descController.text,
                         'color': _selectedColor.value,
                         'icon': _selectedIcon.codePoint,
                         'frequency': _frequency,
-                        'streak': _editingHabit?['streak'] ?? 0,
-                        'completion_log': _editingHabit?['completion_log'] ?? '[]',
+                        'streak': widget.habitId != null ? (habitProvider.habits.firstWhere((h) => h['id'] == widget.habitId, orElse: () => {})['streak'] ?? 0) : 0,
+                        'completion_log': widget.habitId != null ? (habitProvider.habits.firstWhere((h) => h['id'] == widget.habitId, orElse: () => {})['completion_log'] ?? '[]') : '[]',
+                        'checklistEnabled': _checklistEnabled,
                       };
                       try {
-                        if (_editingHabit?.isNotEmpty ?? false) {
-                          await habitProvider.editHabit(_editingHabit!['id'] as int, habit);
+                        if (widget.habitId != null) {
+                          await habitProvider.editHabit(widget.habitId!, habit);
                         } else {
                           await habitProvider.addHabit(habit);
                         }
-                        Navigator.pop(context, habit);
-                        if (_editingHabit?.isNotEmpty ?? false) {
-                          habitProvider.loadHabits(); // Refresh UI after edit
-                        }
+                        navigationService.goBack();
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to save habit: $e', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
+                          SnackBar(content: Text('Failed to save habit: $e')),
                         );
                       }
                     }
@@ -254,7 +253,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text(_editingHabit?.isNotEmpty ?? false ? 'Update Habit' : 'Save Habit', style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
+                  child: Text(widget.habitId == null ? 'Save Habit' : 'Update Habit', style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
                 ),
               ),
             ],

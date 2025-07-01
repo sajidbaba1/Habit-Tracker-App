@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
 import 'package:habit_tracker_app/screens/add_habit_screen.dart';
+import 'package:habit_tracker_app/services/navigation_service.dart';
+import 'package:get_it/get_it.dart';
 import 'package:animations/animations.dart';
 
 class HabitCard extends StatefulWidget {
@@ -17,16 +19,20 @@ class HabitCard extends StatefulWidget {
 class _HabitCardState extends State<HabitCard> {
   @override
   Widget build(BuildContext context) {
-    final habitProvider = Provider.of<HabitProvider>(context, listen: true);
+    final habitProvider = Provider.of<HabitProvider>(context);
     final habit = habitProvider.habits[widget.index];
-    if (habit == null) return const SizedBox.shrink();
 
-    final completionLogJson = habit['completion_log'] as String? ?? '[]';
-    final completionLog = (jsonDecode(completionLogJson) as List)
-        .map((d) => DateTime.parse(d as String))
-        .toList();
+    List<DateTime> completionLog;
+    try {
+      completionLog = (jsonDecode(habit['completion_log'] as String? ?? '[]') as List)
+          .map((d) => DateTime.parse(d as String))
+          .toList();
+    } catch (e) {
+      completionLog = [];
+    }
     final today = DateTime.now();
-    final isTodayCompleted = completionLog.any((d) => d.year == today.year && d.month == today.month && d.day == today.day);
+    final isTodayCompleted = completionLog.any((d) =>
+    d.year == today.year && d.month == today.month && d.day == today.day);
 
     void _showCongratulationCard() {
       if (habit['streak'] == 7) {
@@ -34,7 +40,7 @@ class _HabitCardState extends State<HabitCard> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Congratulations!', style: TextStyle(fontWeight: FontWeight.bold)),
-            content: const Text('You\'ve reached a 7-day streak! Keep it up!'),
+            content: const Text("You've reached a 7-day streak! Keep it up!"),
             actions: [
               TextButton(
                 child: const Text('OK'),
@@ -70,11 +76,9 @@ class _HabitCardState extends State<HabitCard> {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        transform: Matrix4.identity()..setEntry(3, 2, 0.001),
-        transformAlignment: Alignment.center,
         decoration: BoxDecoration(
           color: Color(habit['color'] as int),
           borderRadius: BorderRadius.circular(12),
@@ -98,7 +102,7 @@ class _HabitCardState extends State<HabitCard> {
                   Row(
                     children: [
                       Icon(
-                        IconData(habit['icon'] as int, fontFamily: 'MaterialIcons'), // Ensure correct font family
+                        IconData(habit['icon'] as int, fontFamily: 'MaterialIcons'),
                         size: 24,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
@@ -113,20 +117,9 @@ class _HabitCardState extends State<HabitCard> {
                     children: [
                       IconButton(
                         icon: Icon(Icons.edit, size: 24, color: Theme.of(context).colorScheme.onSurface),
-                        onPressed: () async {
-                          final updatedHabit = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const AddHabitScreen(),
-                              settings: RouteSettings(arguments: habit),
-                            ),
-                          );
-                          if (updatedHabit != null) {
-                            await habitProvider.editHabit(habit['id'] as int, updatedHabit);
-                            setState(() {}); // Local refresh
-                          }
+                        onPressed: () {
+                          GetIt.I<NavigationService>().navigateTo(AddHabitScreen(habitId: habit['id']));
                         },
-                        color: Theme.of(context).colorScheme.primary,
                       ),
                       IconButton(
                         icon: Icon(Icons.delete, size: 24, color: Theme.of(context).colorScheme.error),
@@ -136,6 +129,14 @@ class _HabitCardState extends State<HabitCard> {
                   ),
                 ],
               ),
+              if (habit['checklistEnabled'] == true)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0, top: 4.0),
+                  child: Text(
+                    'Checklist enabled',
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                  ),
+                ),
               const SizedBox(height: 8.0),
               GridView.count(
                 crossAxisCount: 7,
@@ -183,7 +184,7 @@ class _HabitCardState extends State<HabitCard> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Streak: ${habit['streak'] as int} days',
+                    'Streak: ${habit['streak']} days',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
                   ),
                   IconButton(

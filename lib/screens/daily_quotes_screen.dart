@@ -32,7 +32,12 @@ class _DailyQuotesScreenState extends State<DailyQuotesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Daily Quotes')),
+      appBar: AppBar(
+        title: const Text('Daily Quotes', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        elevation: 10,
+        shadowColor: Colors.blue.withOpacity(0.3),
+      ),
       body: PageTransitionSwitcher(
         duration: const Duration(milliseconds: 500),
         transitionBuilder: (child, animation, secondaryAnimation) {
@@ -44,16 +49,23 @@ class _DailyQuotesScreenState extends State<DailyQuotesScreen> {
         },
         child: Card(
           key: ValueKey(_currentIndex),
-          elevation: 4,
-          margin: const EdgeInsets.all(8.0),
+          elevation: 8,
+          margin: const EdgeInsets.all(16.0),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Column(
             children: [
-              Image.asset(quotes[_currentIndex]['image']!, fit: BoxFit.cover, height: 200),
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+                child: Image.asset(quotes[_currentIndex]['image']!, fit: BoxFit.cover, height: 200, width: double.infinity),
+              ),
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   quotes[_currentIndex]['text']!,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Theme.of(context).colorScheme.onSurface),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -68,12 +80,14 @@ class _DailyQuotesScreenState extends State<DailyQuotesScreen> {
             onPressed: _previousQuote,
             child: const Icon(Icons.arrow_back),
             heroTag: 'prevQuote',
+            backgroundColor: Theme.of(context).colorScheme.secondary,
           ),
           const SizedBox(width: 8),
           FloatingActionButton(
             onPressed: _nextQuote,
             child: const Icon(Icons.arrow_forward),
             heroTag: 'nextQuote',
+            backgroundColor: Theme.of(context).colorScheme.secondary,
           ),
         ],
       ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
-import 'package:habit_tracker_app/screens/home_screen.dart'; // Ensure this import is present
+import 'package:habit_tracker_app/screens/home_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -30,7 +30,7 @@ class SettingsScreen extends StatelessWidget {
                 habitProvider.toggleTheme(value);
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => const HomeScreen()), // Ensure HomeScreen is correctly referenced
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
                 );
               },
               tileColor: Theme.of(context).cardColor,

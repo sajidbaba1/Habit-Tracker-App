@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:habit_tracker_app/screens/home_screen.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
+import 'package:habit_tracker_app/screens/home_screen.dart';
+import 'package:get_it/get_it.dart';
+import 'package:habit_tracker_app/services/navigation_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  GetIt.I.registerSingleton<NavigationService>(NavigationService());
   runApp(const MyApp());
 }
 
@@ -15,11 +18,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => HabitProvider()),
+        ChangeNotifierProvider(create: (_) => HabitProvider()..loadHabits()),
       ],
-      child: Consumer<HabitProvider>(
-        builder: (context, habitProvider, child) {
+      child: Builder(
+        builder: (context) {
+          final habitProvider = Provider.of<HabitProvider?>(context);
           return MaterialApp(
+            navigatorKey: GetIt.I<NavigationService>().navigatorKey,
             title: 'Habit Tracker',
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
@@ -62,7 +67,7 @@ class MyApp extends StatelessWidget {
                 bodyLarge: TextStyle(color: Colors.white70),
               ),
             ),
-            themeMode: habitProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            themeMode: habitProvider != null && habitProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             home: const HomeScreen(),
           );
         },

@@ -20,16 +20,29 @@ class DailyMotivationScreen extends StatelessWidget {
     ];
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final motivation = motivations[DateTime.now().day % motivations.length];
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Daily Motivation')),
+      appBar: AppBar(
+        title: const Text('Daily Motivation', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        elevation: 10,
+        shadowColor: Colors.blue.withOpacity(0.3),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Card(
-          elevation: 4,
+          elevation: 8,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Image.asset(motivation['image']!, fit: BoxFit.cover, height: 200),
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+                child: Image.asset(motivation['image']!, fit: BoxFit.cover, height: 200, width: double.infinity),
+              ),
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -37,15 +50,15 @@ class DailyMotivationScreen extends StatelessWidget {
                   children: [
                     Text(
                       motivation['title']!,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       motivation['content']!,
-                      style: Theme.of(context).textTheme.bodyLarge,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface),
                     ),
                     const SizedBox(height: 16),
-                    Text('Date: $today', style: Theme.of(context).textTheme.bodySmall),
+                    Text('Date: $today', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
                   ],
                 ),
               ),

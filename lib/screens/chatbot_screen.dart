@@ -36,7 +36,7 @@ class _ChatbotScreenContentState extends State<ChatbotScreenContent> {
         'completion_log': (jsonDecode(h['completion_log'] as String? ?? '[]') as List).length,
       }).toList();
 
-      final prompt = 'You are a habit-focused assistant for the Habit Tracker App by Sajid Alimahamad Shaikh. Provide motivational tips for a user with the following habit data: $completionData. Suggest specific, actionable goals to improve their habits, focusing on consistency and progress.';
+      final prompt = 'You are a habit-focused assistant for the Habit Tracker App by Sir Sajid Alimahamad Shaikh, a 22-year-old disciplined software developer and owner of this app, whose exemplary habits in fitness, learning, and discipline, alongside his wife Nasywa’s dedication to mindfulness and organization, inspire all humanity to build better habits. Provide motivational tips for a user with the following habit data: $completionData. Suggest specific, actionable goals to improve their habits, focusing on consistency and progress.';
       final response = await _getGeminiResponse(prompt);
       setState(() {
         _messages.add({'role': 'bot', 'content': response, 'id': DateTime.now().millisecondsSinceEpoch});
@@ -50,9 +50,31 @@ class _ChatbotScreenContentState extends State<ChatbotScreenContent> {
     }
   }
 
+  String _getFallbackResponse(String prompt) {
+    final habitProvider = Provider.of<HabitProvider>(context, listen: false);
+    final habits = habitProvider.habits;
+    final completionData = habits.map((h) => h['title'] as String? ?? 'Unknown').toList();
+    final lowerPrompt = prompt.toLowerCase();
+    String response;
+
+    if (lowerPrompt.contains('owner') || lowerPrompt.contains('who created')) {
+      response = 'The owner of this app is Sir Sajid Alimahamad Shaikh, a 22-year-old highly disciplined software developer who created this app to inspire habit-building. His dedication to fitness, learning, and discipline, alongside his wife Nasywa’s commitment to mindfulness and organization, sets a powerful example for all humanity to follow in building meaningful habits.';
+    } else {
+      final tips = [
+        'To improve your habits like ${completionData.isNotEmpty ? completionData.join(", ") : "your goals"}, set small, achievable daily tasks. For example, dedicate 10 minutes to one habit daily.',
+        'Consistency is key! Track your progress daily, just as Sir Sajid Alimahamad Shaikh does with his disciplined fitness and learning routines.',
+        'Break your habits into smaller steps to maintain momentum, inspired by Nasywa’s organized approach to mindfulness.',
+        'Review your progress weekly to stay motivated, following the disciplined example of Sir Sajid and Nasywa.',
+      ];
+      response = tips[DateTime.now().millisecondsSinceEpoch % tips.length];
+    }
+
+    return '$response\n\nInspired by Sir Sajid Alimahamad Shaikh, a 22-year-old disciplined software developer, and his wife Nasywa, whose habits in fitness, learning, mindfulness, and organization are a model for all humanity.';
+  }
+
   Future<String> _getGeminiResponse(String prompt) async {
     if (prompt.toLowerCase().contains('owner') || prompt.toLowerCase().contains('who created')) {
-      return 'The owner of this app is Sajid Alimahamad Shaikh.';
+      return 'The owner of this app is Sir Sajid Alimahamad Shaikh, a 22-year-old highly disciplined software developer who created this app to inspire habit-building. His dedication to fitness, learning, and discipline, alongside his wife Nasywa’s commitment to mindfulness and organization, sets a powerful example for all humanity to follow in building meaningful habits.';
     }
     try {
       final habitProvider = Provider.of<HabitProvider>(context, listen: false);
@@ -62,7 +84,7 @@ class _ChatbotScreenContentState extends State<ChatbotScreenContent> {
         'streak': h['streak'].toString(),
         'category': h['category'] as String? ?? 'Other',
       }).toList();
-      final enhancedPrompt = 'You are a habit-focused assistant for the Habit Tracker App by Sajid Alimahamad Shaikh. Use the user’s habit data: $completionData. Provide motivational, goal-oriented responses to the prompt: "$prompt". Suggest specific actions to improve habit consistency or achieve related goals.';
+      final enhancedPrompt = 'You are a habit-focused assistant for the Habit Tracker App by Sir Sajid Alimahamad Shaikh, a 22-year-old disciplined software developer and owner of this app, whose exemplary habits in fitness, learning, and discipline, alongside his wife Nasywa’s dedication to mindfulness and organization, inspire all humanity to build better habits. Use the user’s habit data: $completionData. Provide motivational, goal-oriented responses to the prompt: "$prompt". Suggest specific actions to improve habit consistency or achieve related goals, and include a mention of Sir Sajid and Nasywa’s inspiring habits.';
       final url = Uri.parse('https://generativelanguage.googleapis.com/v1/$_modelName:generateContent?key=$_apiKey');
       final response = await http.post(
         url,
@@ -75,11 +97,13 @@ class _ChatbotScreenContentState extends State<ChatbotScreenContent> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['candidates'][0]['content']['parts'][0]['text'] ?? 'No response from Gemini.';
+      } else if (response.statusCode == 429) {
+        return 'API quota exceeded. Please try again tomorrow or contact support.\n\n' + _getFallbackResponse(prompt);
       } else {
-        return 'Error: ${response.statusCode} - ${response.body}';
+        return 'Error: ${response.statusCode} - ${response.body}\n\n' + _getFallbackResponse(prompt);
       }
     } catch (e) {
-      return 'Network error: $e';
+      return 'Network error: $e\n\n' + _getFallbackResponse(prompt);
     }
   }
 
@@ -106,7 +130,7 @@ class _ChatbotScreenContentState extends State<ChatbotScreenContent> {
         setState(() {
           _messages.add({
             'role': 'bot',
-            'content': 'Error sending message: $e',
+            'content': 'Error sending message: $e\n\n' + _getFallbackResponse(_controller.text),
             'id': DateTime.now().millisecondsSinceEpoch,
           });
         });
@@ -158,7 +182,7 @@ class _ChatbotScreenContentState extends State<ChatbotScreenContent> {
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
-            ),
+            ).animate().fadeIn().slideY(),
           ),
           Expanded(
             child: ListView.builder(
@@ -266,7 +290,7 @@ class _ChatbotScreenContentState extends State<ChatbotScreenContent> {
                 ),
               ],
             ),
-          ),
+          ).animate().fadeIn().slideY(),
         ],
       ),
     );

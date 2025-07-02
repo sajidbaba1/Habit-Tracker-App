@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 
 class NavigationService {
-  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-  Future<dynamic> navigateTo(Widget destination) {
-    return navigatorKey.currentState!.push(
-      MaterialPageRoute(builder: (_) => destination),
-    );
+  static void navigateTo(String routeName) {
+    navigatorKey.currentState?.pushNamed(routeName);
   }
 
-  void goBack() {
-    navigatorKey.currentState!.pop();
+  static void goBack() {
+    navigatorKey.currentState?.pop();
   }
 }

@@ -1,8 +1,4 @@
-import 'package:intl/intl.dart';
-
 extension DateTimeExtension on DateTime {
-  int get dayOfYear {
-    final startOfYear = DateTime(year, 1, 1);
-    return difference(startOfYear).inDays + 1;
-  }
+  String get formattedDate => '${day.toString().padLeft(2, '0')}-${month.toString().padLeft(2, '0')}-${year}';
+  bool isSameDay(DateTime other) => year == other.year && month == other.month && day == other.day;
 }

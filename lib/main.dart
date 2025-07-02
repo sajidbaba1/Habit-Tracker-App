@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:habit_tracker_app/screens/add_habit_screen.dart';
+import 'package:habit_tracker_app/screens/analytics_screen.dart';
+import 'package:habit_tracker_app/screens/chatbot_screen.dart';
+import 'package:habit_tracker_app/screens/daily_motivation_screen.dart';
+import 'package:habit_tracker_app/screens/habit_tracker_screen.dart';
+import 'package:habit_tracker_app/screens/license_screen.dart';
+import 'package:habit_tracker_app/screens/settings_screen.dart';
+import 'package:habit_tracker_app/screens/sjd_coins_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
 import 'package:habit_tracker_app/screens/home_screen.dart';
-import 'package:get_it/get_it.dart';
 import 'package:habit_tracker_app/services/navigation_service.dart';
+import 'package:get_it/get_it.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  GetIt.I.registerSingleton<NavigationService>(NavigationService());
+void main() {
+  setupGetIt();
   runApp(const MyApp());
+}
+
+void setupGetIt() {
+  GetIt.instance.registerLazySingleton(() => NavigationService());
 }
 
 class MyApp extends StatelessWidget {
@@ -16,63 +27,29 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => HabitProvider()..loadHabits()),
-      ],
-      child: Builder(
-        builder: (context) {
-          final habitProvider = Provider.of<HabitProvider?>(context);
+    return ChangeNotifierProvider(
+      create: (_) => HabitProvider(),
+      child: Consumer<HabitProvider>(
+        builder: (context, habitProvider, child) {
           return MaterialApp(
-            navigatorKey: GetIt.I<NavigationService>().navigatorKey,
-            title: 'Habit Tracker',
+            navigatorKey: NavigationService.navigatorKey,
+            title: 'Habit Tracker App',
             theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue,
-                brightness: Brightness.light,
-                primary: Colors.blueAccent,
-                onPrimary: Colors.black,
-                secondary: Colors.tealAccent,
-                onSecondary: Colors.black,
-                surface: Colors.white,
-                onSurface: Colors.black87,
-              ),
+              primarySwatch: Colors.blue,
+              brightness: habitProvider.isDarkMode ? Brightness.dark : Brightness.light,
               useMaterial3: true,
-              textTheme: const TextTheme(
-                headlineLarge: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-                headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
-                bodyLarge: TextStyle(fontSize: 16, color: Colors.black54),
-                bodySmall: TextStyle(fontSize: 14, color: Colors.black54),
-              ),
-              elevatedButtonTheme: ElevatedButtonThemeData(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.black87,
-                  backgroundColor: Colors.blueAccent,
-                  elevation: 8,
-                  shadowColor: Colors.blue.withValues(alpha: 0.5),
-                ),
-              ),
             ),
-            darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue,
-                brightness: Brightness.dark,
-                primary: Colors.blueAccent,
-                onPrimary: Colors.white,
-                secondary: Colors.tealAccent,
-                onSecondary: Colors.black,
-                surface: Colors.grey[900],
-                onSurface: Colors.white,
-              ),
-              textTheme: const TextTheme(
-                headlineLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                bodyLarge: TextStyle(fontSize: 16, color: Colors.white70),
-                bodySmall: TextStyle(fontSize: 14, color: Colors.white70),
-              ),
-            ),
-            themeMode: habitProvider != null && habitProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             home: const HomeScreen(),
+            routes: {
+              '/add_habit': (context) => const AddHabitScreen(),
+              '/settings': (context) => const SettingsScreen(),
+              '/sjd_coins': (context) => const SJDCoinsScreen(),
+              '/analytics': (context) => const AnalyticsScreenContent(),
+              '/motivation': (context) => const DailyMotivationScreenContent(),
+              '/chatbot': (context) => const ChatbotScreenContent(),
+              '/tracker': (context) => const HabitTrackerScreen(),
+              '/license': (context) => const LicenseScreen(),
+            },
           );
         },
       ),

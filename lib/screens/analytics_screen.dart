@@ -1,301 +1,223 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import 'package:habit_tracker_app/providers/habit_provider.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:convert';
 
 class AnalyticsScreenContent extends StatefulWidget {
   const AnalyticsScreenContent({super.key});
 
   @override
-  State<AnalyticsScreenContent> createState() => _AnalyticsScreenContentState();
+  _AnalyticsScreenContentState createState() => _AnalyticsScreenContentState();
 }
 
 class _AnalyticsScreenContentState extends State<AnalyticsScreenContent> {
-  String _selectedCategory = 'All';
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  final Map<DateTime, String> _dateLabels = {};
+  Map<DateTime, List<dynamic>> _events = {};
+  String _notes = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDay = _focusedDay;
+    _loadEvents();
+  }
+
+  void _loadEvents() {
+    final habitProvider = Provider.of<HabitProvider>(context, listen: false);
+    final events = <DateTime, List<dynamic>>{};
+    for (var habit in habitProvider.habits) {
+      final completionLog = (jsonDecode(habit['completion_log'] as String? ?? '[]') as List)
+          .map((d) => DateTime.parse(d as String))
+          .toList();
+      for (var date in completionLog) {
+        final normalizedDate = DateTime(date.year, date.month, date.day);
+        events[normalizedDate] = events[normalizedDate] ?? [];
+        events[normalizedDate]!.add(habit);
+      }
+    }
+    setState(() {
+      _events = events;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final habitProvider = Provider.of<HabitProvider>(context);
-    final habits = habitProvider.habits;
-    final categories = ['All', 'Health', 'Productivity', 'Leisure', 'Learning'];
-
-    final filteredHabits = _selectedCategory == 'All'
-        ? habits
-        : habits.where((h) => (h['category'] as String? ?? 'Other') == _selectedCategory).toList();
-
-    final pieData = filteredHabits.map((h) {
-      final completed = (jsonDecode(h['completion_log'] as String? ?? '[]') as List).length;
-      final totalDays = 30; // 30-day window
-      final percentage = (completed / totalDays) * 100;
-      return PieChartSectionData(
-        value: percentage,
-        title: '${h['title']}\n${percentage.toStringAsFixed(1)}%',
-        color: Color(h['color'] as int? ?? Colors.blue.value),
-        radius: 80,
-        titleStyle: const TextStyle(fontSize: 12, color: Colors.white),
-      );
-    }).toList();
-
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+    return Scaffold(
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Analytics',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Category Filter
-            DropdownButton<String>(
-              value: _selectedCategory,
-              items: categories
-                  .map((category) => DropdownMenuItem(
-                value: category,
-                child: Text(category),
-              ))
-                  .toList(),
-              onChanged: (value) => setState(() => _selectedCategory = value!),
-            ),
-            const SizedBox(height: 16),
-            // Pie Chart
-            SizedBox(
-              height: 200,
-              child: PieChart(
-                PieChartData(
-                  sections: pieData,
-                  centerSpaceRadius: 40,
-                  sectionsSpace: 2,
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Habit Analytics',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
-              ),
+              ).animate().fadeIn().slideY(),
             ),
-            const SizedBox(height: 16),
-            // Calendar View
-            Text('Habit Calendar', style: Theme.of(context).textTheme.headlineSmall),
-            TableCalendar(
-              firstDay: DateTime.now().subtract(const Duration(days: 365)),
-              lastDay: DateTime.now(),
-              focusedDay: _focusedDay,
-              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-                _showLabelDialog(selectedDay);
-              },
-              calendarBuilders: CalendarBuilders(
-                markerBuilder: (context, date, events) {
-                  final completedHabits = habits.where((h) {
-                    final log = (jsonDecode(h['completion_log'] as String? ?? '[]') as List)
-                        .map((d) => DateTime.parse(d as String))
-                        .toList();
-                    return log.any((d) => isSameDay(d, date));
-                  }).toList();
-                  final isBookmarked = _dateLabels.containsKey(date);
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (completedHabits.isNotEmpty)
-                        Container(
-                          margin: const EdgeInsets.all(4.0),
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.green,
-                          ),
-                          width: 6,
-                          height: 6,
-                        ),
-                      if (isBookmarked)
-                        Container(
-                          margin: const EdgeInsets.all(4.0),
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.yellow,
-                          ),
-                          width: 6,
-                          height: 6,
-                        ),
-                    ],
-                  );
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              child: TableCalendar(
+                firstDay: DateTime.utc(2020, 1, 1),
+                lastDay: DateTime.utc(2030, 12, 31),
+                focusedDay: _focusedDay,
+                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay;
+                    _notes = _getNotesForDay(selectedDay);
+                  });
                 },
-              ),
-            ),
-            if (_selectedDay != null && _dateLabels[_selectedDay] != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  'Label for ${_selectedDay!.day}/${_selectedDay!.month}/${_selectedDay!.year}: ${_dateLabels[_selectedDay]!}',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                calendarFormat: CalendarFormat.month,
+                eventLoader: (day) {
+                  final normalizedDay = DateTime(day.year, day.month, day.day);
+                  return _events[normalizedDay] ?? [];
+                },
+                calendarStyle: CalendarStyle(
+                  todayDecoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  markerDecoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-            const SizedBox(height: 16),
-            // Habit Completion Notes
-            Text('Completion Notes', style: Theme.of(context).textTheme.headlineSmall),
-            ...filteredHabits.map((h) {
-              final log = (jsonDecode(h['completion_log'] as String? ?? '[]') as List)
-                  .map((d) => DateTime.parse(d as String))
-                  .toList();
-              final completedDays = log.length;
-              final successRate = (completedDays / 30) * 100;
-              final notes = h['notes'] as String? ?? '';
-              return Card(
-                child: ListTile(
-                  title: Text(h['title'] as String? ?? 'Untitled'),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Category: ${h['category'] ?? 'Other'}\n'
-                            'Success Rate: ${successRate.toStringAsFixed(1)}%\n'
-                            'Completed: $completedDays/30 days',
+              ).animate().fadeIn().scale(),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Completion Stats',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
-                      if (notes.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Text(
-                            'Notes: $notes',
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                          ),
-                        ),
-                    ],
-                  ),
-                  leading: CircleAvatar(
-                    backgroundColor: Color(h['color'] as int? ?? Colors.blue.value),
-                    child: Icon(
-                      IconData(h['icon'] as int? ?? Icons.favorite.codePoint, fontFamily: 'MaterialIcons'),
-                      color: Colors.white,
-                    ),
-                  ),
-                  trailing: IconButton(
-                    icon: Icon(Icons.edit_note, color: Theme.of(context).colorScheme.primary),
-                    onPressed: () => _showNotesDialog(context, habitProvider, h['id'] as int, notes),
-                  ),
-                ),
-              ).animate().fadeIn().slideY();
-            }),
-            const SizedBox(height: 16),
-            // Habit Challenges
-            Text('Habit Challenges', style: Theme.of(context).textTheme.headlineSmall),
-            Card(
-              child: ListTile(
-                title: const Text('30-Day Challenge'),
-                subtitle: const Text('Complete any habit daily for 30 days to earn a badge!'),
-                trailing: ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.vibrate();
-                    showDialog(
-                      context: context,
-                      builder: (context) => Dialog(
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.star, size: 60, color: Colors.yellow),
-                              const Text('Challenge Accepted!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 10),
-                              const Text('Start your 30-day streak today!'),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('OK'),
+                    ).animate().fadeIn().slideY(),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 200,
+                      child: BarChart(
+                        BarChartData(
+                          alignment: BarChartAlignment.spaceAround,
+                          barGroups: _buildBarGroups(habitProvider.habits),
+                          borderData: FlBorderData(show: false),
+                          titlesData: FlTitlesData(
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  final index = value.toInt();
+                                  if (index < habitProvider.habits.length) {
+                                    return Text(
+                                      habitProvider.habits[index]['title'].substring(0, 3),
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                        fontSize: 12,
+                                      ),
+                                    );
+                                  }
+                                  return const Text('');
+                                },
                               ),
-                            ],
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: true),
+                            ),
                           ),
                         ),
-                      ).animate().scale().fadeIn(),
-                    );
-                  },
-                  child: const Text('Join'),
+                      ),
+                    ).animate().fadeIn().scale(),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Notes for ${_selectedDay != null ? DateFormat('d MMM yyyy').format(_selectedDay!) : "Selected Date"}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ).animate().fadeIn().slideY(),
+                    const SizedBox(height: 8),
+                    TextField(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'Add completion notes...',
+                      ),
+                      maxLines: 3,
+                      onChanged: (value) {
+                        _notes = value;
+                      },
+                      controller: TextEditingController(text: _notes),
+                    ).animate().fadeIn().slideY(),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_selectedDay != null && _notes.isNotEmpty) {
+                          final habitsOnDay = _events[DateTime(_selectedDay!.year, _selectedDay!.month, _selectedDay!.day)] ?? [];
+                          for (var habit in habitsOnDay) {
+                            habitProvider.updateHabitNotes(habit['id'], _notes);
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Notes saved')),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                      child: const Text('Save Notes'),
+                    ).animate().fadeIn().scale(),
+                  ],
                 ),
               ),
             ),
-            // Milestone Celebration
-            ...filteredHabits.where((h) => (h['streak'] as int? ?? 0) >= 30).map((h) {
-              return Card(
-                child: ListTile(
-                  title: Text('Milestone: ${h['title']}'),
-                  subtitle: const Text('Congratulations on reaching a 30-day streak!'),
-                  leading: const Icon(Icons.emoji_events, color: Colors.yellow),
-                ).animate().shake().fadeIn(),
-              );
-            }),
           ],
         ),
       ),
     );
   }
 
-  void _showLabelDialog(DateTime date) {
-    final controller = TextEditingController(text: _dateLabels[date]);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Label for ${date.day}/${date.month}/${date.year}'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'Enter label (e.g., Milestone, Event)'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                if (controller.text.isEmpty) {
-                  _dateLabels.remove(date);
-                } else {
-                  _dateLabels[date] = controller.text;
-                }
-              });
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
+  List<BarChartGroupData> _buildBarGroups(List<Map<String, dynamic>> habits) {
+    return habits.asMap().entries.map((entry) {
+      final index = entry.key;
+      final habit = entry.value;
+      final completionLog = (jsonDecode(habit['completion_log'] as String? ?? '[]') as List).length;
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: completionLog.toDouble(),
+            color: Theme.of(context).colorScheme.primary,
           ),
         ],
-      ),
-    );
+      );
+    }).toList();
   }
 
-  void _showNotesDialog(BuildContext context, HabitProvider habitProvider, int habitId, String currentNotes) {
-    final controller = TextEditingController(text: currentNotes);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Completion Notes'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'Enter notes for this habit'),
-          maxLines: 3,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              habitProvider.updateHabitNotes(habitId, controller.text);
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
+  String _getNotesForDay(DateTime day) {
+    final habitsOnDay = _events[DateTime(day.year, day.month, day.day)] ?? [];
+    if (habitsOnDay.isNotEmpty) {
+      return habitsOnDay.first['notes'] ?? '';
+    }
+    return '';
   }
 }

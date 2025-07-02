@@ -14,6 +14,7 @@ import 'package:habit_tracker_app/providers/habit_provider.dart';
 import 'package:habit_tracker_app/widgets/habit_card.dart';
 import 'package:habit_tracker_app/services/navigation_service.dart';
 import 'package:get_it/get_it.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,17 +23,29 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
+  late AnimationController _controller;
+  late Animation<double> _progressAnimation;
 
-  final List<Widget> _screens = [
-    const HomeContent(),
-    const AnalyticsScreenContent(),
-    const AddHabitScreen(),
-    const DailyMotivationScreenContent(),
-    const ChatbotScreenContent(),
-    const HabitTrackerScreenContent(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(hours: 24),
+      vsync: this,
+    );
+    _progressAnimation = Tween<double>(begin: 0, end: 1).animate(_controller);
+    _updateDayProgress();
+  }
+
+  void _updateDayProgress() {
+    final now = DateTime.now();
+    final secondsInDay = 24 * 60 * 60;
+    final elapsedSeconds = now.hour * 3600 + now.minute * 60 + now.second;
+    _controller.value = elapsedSeconds / secondsInDay;
+    _controller.forward();
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -59,21 +72,21 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
           totalRepeatCount: 1,
-        ),
+        ).animate().fadeIn().slideY(),
         actions: [
           GestureDetector(
             onTap: () {
               HapticFeedback.vibrate();
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const SJDCoinsScreen()),
+                MaterialPageRoute(builder: (context) => SJDCoinsScreen()),
               );
             },
             child: Padding(
               padding: const EdgeInsets.only(right: 16.0),
               child: Row(
                 children: [
-                  const Icon(Icons.monetization_on, color: Colors.yellow, size: 24),
+                  const Icon(Icons.monetization_on, color: Colors.yellow, size: 24).animate().fadeIn(),
                   const SizedBox(width: 4),
                   Consumer<HabitProvider>(
                     builder: (context, provider, child) => Text(
@@ -82,19 +95,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Theme.of(context).colorScheme.onPrimary,
                         fontWeight: FontWeight.bold,
                       ),
-                    ),
+                    ).animate().fadeIn(),
                   ),
                 ],
               ),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.settings, size: 30),
+            icon: const Icon(Icons.settings, size: 30).animate().fadeIn(),
             onPressed: () {
               HapticFeedback.vibrate();
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                MaterialPageRoute(builder: (context) => SettingsScreen()),
               );
             },
           ),
@@ -139,15 +152,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 HapticFeedback.vibrate();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  MaterialPageRoute(builder: (context) => SettingsScreen()),
                 );
               },
             ),
           ],
         ),
-      )
+      ).animate().fadeIn().slideX()
           : null,
-      body: _screens[_selectedIndex],
+      body: _screens[_selectedIndex].animate().fadeIn().scale(),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.analytics), label: 'Analytics'),
@@ -162,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
         showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,
         onTap: _onItemTapped,
-      ),
+      ).animate().fadeIn().slideY(begin: 0.5),
     );
   }
 
@@ -172,6 +185,23 @@ class _HomeScreenState extends State<HomeScreen> {
     if (hour < 17) return 'Good Afternoon';
     return 'Good Evening';
   }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Animation<double> get progressAnimation => _progressAnimation;
+
+  final List<Widget> _screens = [
+    const HomeContent(),
+    const AnalyticsScreenContent(),
+    const AddHabitScreen(),
+    const DailyMotivationScreenContent(),
+    const ChatbotScreenContent(),
+    const HabitTrackerScreen(),
+  ];
 }
 
 class HomeContent extends StatelessWidget {
@@ -181,15 +211,70 @@ class HomeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final habitProvider = Provider.of<HabitProvider>(context, listen: false);
     final screenWidth = MediaQuery.of(context).size.width;
+    final today = DateTime.now();
+    final weekday = today.weekday;
+    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
 
     return SafeArea(
       child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text(
-              DateFormat('d MMMM yyyy').format(DateTime.now()),
-              style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(7, (index) {
+                    final day = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index];
+                    final isToday = index + 1 == weekday;
+                    return AnimatedBuilder(
+                      animation: homeState!.progressAnimation,
+                      builder: (context, _) => Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isToday
+                                  ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
+                                  : Colors.transparent,
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: isToday ? 2 : 1,
+                              ),
+                            ),
+                          ),
+                          if (isToday)
+                            SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: CircularProgressIndicator(
+                                value: homeState.progressAnimation.value,
+                                strokeWidth: 2,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          Text(
+                            day,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn().scale(delay: Duration(milliseconds: index * 100));
+                  }),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  DateFormat('d MMMM yyyy').format(today),
+                  style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                ).animate().fadeIn().slideY(),
+              ],
             ),
           ),
           Expanded(
@@ -197,10 +282,11 @@ class HomeContent extends StatelessWidget {
               stream: habitProvider.loading,
               builder: (context, snapshot) {
                 if (snapshot.data == true) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator()).animate().fadeIn();
                 }
                 if (habitProvider.habits.isEmpty) {
-                  return const Center(child: Text('No habits yet. Add a new one!', style: TextStyle(fontSize: 18)));
+                  return const Center(child: Text('No habits yet. Add a new one!', style: TextStyle(fontSize: 18)))
+                      .animate().fadeIn().scale();
                 }
                 return RefreshIndicator(
                   onRefresh: () => habitProvider.loadHabits(),
@@ -209,7 +295,7 @@ class HomeContent extends StatelessWidget {
                     itemCount: habitProvider.habits.length,
                     itemBuilder: (context, index) => AnimatedBuilder(
                       animation: habitProvider,
-                      builder: (context, child) => HabitCard(index: index),
+                      builder: (context, child) => HabitCard(index: index).animate().fadeIn().slideY(delay: Duration(milliseconds: index * 100)),
                     ),
                   ),
                 );

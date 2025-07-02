@@ -1,34 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
-import 'dart:convert';
 import 'package:habit_tracker_app/services/database_helper.dart';
+import 'dart:convert';
 
-class HabitProvider with ChangeNotifier {
+class HabitProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _habits = [];
-  final _loadingController = BehaviorSubject<bool>.seeded(false);
-  bool _isDarkMode = false;
+  final BehaviorSubject<bool> _loading = BehaviorSubject<bool>.seeded(false);
+  final DatabaseHelper _dbHelper = DatabaseHelper();
 
   List<Map<String, dynamic>> get habits => _habits;
-  Stream<bool> get loading => _loadingController.stream;
-  bool get isDarkMode => _isDarkMode;
+  Stream<bool> get loading => _loading.stream;
 
   HabitProvider() {
     loadHabits();
-    _loadTheme();
   }
 
   Future<void> loadHabits() async {
-    _loadingController.add(true);
-    final db = await DatabaseHelper.instance.database;
-    final habitList = await db.query('habits');
-    _habits = habitList.map((h) {
-      final log = jsonDecode(h['completion_log'] as String? ?? '[]') as List;
-      final streak = _calculateStreak(log.map((d) => DateTime.parse(d as String)).toList());
-      return {...h, 'streak': streak};
-    }).toList();
-    _loadingController.add(false);
+    _loading.add(true);
+    _habits = await _dbHelper.getHabits();
+    _loading.add(false);
     notifyListeners();
   }
 
@@ -37,117 +27,123 @@ class HabitProvider with ChangeNotifier {
     required String category,
     required int icon,
     required int color,
-    bool checklistEnabled = false,
+    required bool checklistEnabled,
   }) async {
-    final db = await DatabaseHelper.instance.database;
-    await db.insert('habits', {
+    _loading.add(true);
+    await _dbHelper.insertHabit({
       'title': title,
       'category': category,
       'icon': icon,
       'color': color,
+      'checklist_enabled': checklistEnabled ? 1 : 0,
+      'streak': 0,
       'completion_log': jsonEncode([]),
-      'checklistEnabled': checklistEnabled ? 1 : 0,
       'notes': '',
     });
     await loadHabits();
   }
 
-  Future<void> updateHabit(int id, {
-    String? title,
-    String? category,
-    int? icon,
-    int? color,
-    bool? checklistEnabled,
-  }) async {
-    final db = await DatabaseHelper.instance.database;
-    final currentHabit = _habits.firstWhere((h) => h['id'] == id);
-    await db.update(
-      'habits',
-      {
-        'title': title ?? currentHabit['title'],
-        'category': category ?? currentHabit['category'],
-        'icon': icon ?? currentHabit['icon'],
-        'color': color ?? currentHabit['color'],
-        'completion_log': currentHabit['completion_log'],
-        'checklistEnabled': checklistEnabled != null ? (checklistEnabled ? 1 : 0) : currentHabit['checklistEnabled'],
-        'notes': currentHabit['notes'] ?? '',
-      },
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+  Future<void> updateHabit(
+      int id, {
+        required String title,
+        required String category,
+        required int icon,
+        required int color,
+        required bool checklistEnabled,
+      }) async {
+    _loading.add(true);
+    final habit = _habits.firstWhere((h) => h['id'] == id);
+    await _dbHelper.updateHabit({
+      'id': id,
+      'title': title,
+      'category': category,
+      'icon': icon,
+      'color': color,
+      'checklist_enabled': checklistEnabled ? 1 : 0,
+      'streak': habit['streak'],
+      'completion_log': habit['completion_log'],
+      'notes': habit['notes'] ?? '',
+    });
+    await loadHabits();
+  }
+
+  Future<void> deleteHabit(int id) async {
+    _loading.add(true);
+    await _dbHelper.deleteHabit(id);
     await loadHabits();
   }
 
   Future<void> updateHabitNotes(int id, String notes) async {
-    final db = await DatabaseHelper.instance.database;
-    await db.update(
-      'habits',
-      {'notes': notes},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    _loading.add(true);
+    final habit = _habits.firstWhere((h) => h['id'] == id);
+    await _dbHelper.updateHabit({
+      'id': id,
+      'title': habit['title'],
+      'category': habit['category'],
+      'icon': habit['icon'],
+      'color': habit['color'],
+      'checklist_enabled': habit['checklist_enabled'],
+      'streak': habit['streak'],
+      'completion_log': habit['completion_log'],
+      'notes': notes,
+    });
     await loadHabits();
   }
 
   Future<int> toggleCompletion(int index, DateTime date) async {
-    final db = await DatabaseHelper.instance.database;
     final habit = _habits[index];
-    List<DateTime> completionLog = (jsonDecode(habit['completion_log'] as String? ?? '[]') as List)
+    final completionLog = (jsonDecode(habit['completion_log'] as String? ?? '[]') as List)
         .map((d) => DateTime.parse(d as String))
         .toList();
-    final dateOnly = DateTime(date.year, date.month, date.day);
-    if (completionLog.any((d) => d.year == dateOnly.year && d.month == dateOnly.month && d.day == dateOnly.day)) {
-      completionLog.removeWhere((d) => d.year == dateOnly.year && d.month == dateOnly.month && d.day == dateOnly.day);
+    final isCompleted = completionLog.any((d) => d.year == date.year && d.month == date.month && d.day == date.day);
+    if (isCompleted) {
+      completionLog.removeWhere((d) => d.year == date.year && d.month == date.month && d.day == date.day);
     } else {
-      completionLog.add(dateOnly);
+      completionLog.add(date);
     }
-    await db.update(
-      'habits',
-      {'completion_log': jsonEncode(completionLog.map((d) => d.toIso8601String()).toList())},
-      where: 'id = ?',
-      whereArgs: [habit['id']],
-    );
+    final newStreak = _calculateStreak(completionLog);
+    await _dbHelper.updateHabit({
+      'id': habit['id'],
+      'title': habit['title'],
+      'category': habit['category'],
+      'icon': habit['icon'],
+      'color': habit['color'],
+      'checklist_enabled': habit['checklist_enabled'],
+      'streak': newStreak,
+      'completion_log': jsonEncode(completionLog.map((d) => d.toIso8601String()).toList()),
+      'notes': habit['notes'] ?? '',
+    });
     await loadHabits();
-    return _calculateStreak(completionLog);
+    return newStreak;
   }
 
-  Future<void> deleteHabit(int id) async {
-    final db = await DatabaseHelper.instance.database;
-    await db.delete('habits', where: 'id = ?', whereArgs: [id]);
-    await loadHabits();
-  }
-
-  int _calculateStreak(List<DateTime> completionLog) {
-    if (completionLog.isEmpty) return 0;
-    completionLog.sort((a, b) => b.compareTo(a)); // Sort descending
-    int streak = 0;
-    DateTime current = DateTime.now();
-    for (var date in completionLog) {
-      final dateOnly = DateTime(date.year, date.month, date.day);
-      final currentOnly = DateTime(current.year, current.month, current.day);
-      if (dateOnly.isAtSameMomentAs(currentOnly) || dateOnly.isAtSameMomentAs(currentOnly.subtract(const Duration(days: 1)))) {
+  int _calculateStreak(List<DateTime> log) {
+    if (log.isEmpty) return 0;
+    log.sort((a, b) => b.compareTo(a));
+    int streak = 1;
+    DateTime current = log.first;
+    for (var date in log.skip(1)) {
+      if (current.difference(date).inDays == 1) {
         streak++;
         current = date;
-      } else if (dateOnly.isBefore(currentOnly.subtract(const Duration(days: 1)))) {
+      } else {
         break;
       }
     }
     return streak;
   }
 
-  void toggleTheme(bool isDarkMode) {
-    _isDarkMode = isDarkMode;
-    notifyListeners();
-  }
+  bool get isDarkMode => _isDarkMode;
+  bool _isDarkMode = false;
 
-  void _loadTheme() {
-    _isDarkMode = false; // Default to light mode, can be persisted if needed
+  void toggleTheme(bool isDark) {
+    _isDarkMode = isDark;
     notifyListeners();
   }
 
   @override
   void dispose() {
-    _loadingController.close();
+    _loading.close();
     super.dispose();
   }
 }
